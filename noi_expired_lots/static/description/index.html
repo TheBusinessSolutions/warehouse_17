@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lot Expiration Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      align:center;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      margin-top: 20px;
+    }
+    .section {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+      text-align: center;
+      align: center;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.15);
+    }
+    .section h2 {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    .section p {
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    .placeholder {
+      margin: 15px 0;
+      padding: 20px;
+      background: #eaeaea;
+      border: 2px dashed #aaa;
+      text-align: center;
+      border-radius: 8px;
+      color: #555;
+    }
+    .placeholder img {
+      width: 80% !important;
+    }
+    .flow-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 30px;
+      margin-bottom: 100px;
+    }
+    .flow-box {
+      background: white;
+      padding: 15px 30px;
+      margin: 10px;
+      border-radius: 10px;
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+      width: 70%;
+    }
+    .arrow {
+      font-size: 24px;
+      margin: 5px 0;
+    }
+    .dashboard-preview {
+      display: flex;
+      justify-content: space-around;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+    .card {
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0px 4px 8px rgba(0,0,0,0.15);
+      width: 200px;
+      margin: 10px;
+      text-align: center;
+    }
+    .card .count {
+      font-size: 28px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .card .label {
+      font-size: 16px;
+      color: #555;
+    }
+    .youtube-section {
+      margin: 30px 0;
+      text-align: center;
+    }
+    .youtube-btn {
+      display: inline-block;
+      padding: 12px 25px;
+      background: #ff0000;
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: background 0.3s ease;
+    }
+    .youtube-btn:hover {
+      background: #cc0000;
+    }
+    footer {
+      background: #222;
+      color: white;
+      padding: 20px;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+    }
+    footer a {
+      color: #00aced;
+      text-decoration: none;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <h1>Lot Expiration Dashboard Flow</h1>
+
+  <!-- Step 1 -->
+  <div class="section">
+    <h2>⚙️ Step 1: Configure Lot Expiration Settings</h2><br/>
+    <p>Set up your expiration rules: number, duration (day, month, year), and dashboard color indicators.</p><br/>
+    <img src="image/setting.png" alt="Lot Expiration Settings" style="width:70%;align:center;"/>
+  </div><br/><br/>
+
+  <!-- Step 2 -->
+  <div class="section">
+    <h2>📦 Step 2: Product Setting</h2><br/>
+    <p>Enable <strong>Lots</strong> and allow <strong>Expiration Dates</strong> in the product configuration.</p><br/>
+    <img src="image/product_setting.png" alt="Product Setting" style="width:70%;align:center;"/>
+  </div><br/><br/>
+
+  <!-- Step 3 -->
+  <div class="section">
+    <h2>📝 Step 3: Lot Form Setting</h2><br/>
+    <p>Assign expiration dates directly in the <strong>Lot Form</strong>.</p><br/>
+    <img src="image/lot_setting.png" alt="Lot Form Setting" style="width:70%;align-item:center;"/>
+  </div><br/><br/>
+
+  <!-- Step 4 -->
+  <div class="section">
+    <h2>📊 Step 4: Lot Expiration Dashboard</h2><br/>
+    <p>Visualize all product lots and expiration statuses in one dashboard.</p><br/>
+    <div><img src="image/lot_dashboard.png" alt="Lot Dashboard" style="width:70%;align-item:center;"/></div><br/>
+
+    <!-- Mock-up of dashboard cards (based on your XML design) -->
+    <div class="dashboard-preview">
+      <div class="card" style="background:#FFD1D1;">
+        <div class="count">12</div>
+        <div class="label">Expired</div>
+      </div>
+      <div class="card" style="background:#FFF2CC;">
+        <div class="count">8</div>
+        <div class="label">Expiring in Days</div>
+      </div>
+      <div class="card" style="background:#D9EAD3;">
+        <div class="count">15</div>
+        <div class="label">Expiring in Months</div>
+      </div>
+      <div class="card" style="background:#CCE5FF;">
+        <div class="count">30</div>
+        <div class="label">Expiring in Years</div>
+      </div>
+    </div>
+  </div><br/>
+
+  <!-- YouTube Section -->
+  <div class="youtube-section">
+    <p>🎥 Walkthrough on YouTube:</p>
+    <a class="youtube-btn" href="https://youtu.be/wWSWloR62fk" target="_blank">▶ Watch on YouTube</a>
+  </div><br/>
+
+  <!-- Footer -->
+  <footer>
+    <p><strong>NexOrionis Techsphere</strong></p>
+    <p>📧 Support: <a href="mailto:nexorionis.info@gmail.com">nexorionis.info@gmail.com</a></p>
+    <p>🌐 Website: <a href="https://nexorionis.odoo.com" target="_blank">nexorionis.odoo.com</a></p>
+  </footer>
+</body>
+</html>

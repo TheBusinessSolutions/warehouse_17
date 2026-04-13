@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_expired_lot_all,User access for Expired Lots Dashboard,model_expired_lots,base.group_user,1,0,0,0
+"access_ir_model_group_user","ir_model group_user","base.model_ir_model","base.group_user",1,0,0,0

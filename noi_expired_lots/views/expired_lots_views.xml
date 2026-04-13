@@ -1,0 +1,37 @@
+<odoo>
+    <data>
+        <record id="expired_lots_search" model="ir.ui.view">
+            <field name="name">expired.lots.search</field>
+            <field name="model">expired.lots</field>
+            <field name="arch" type="xml">
+                <search string="Lot Expiration Dashboard"></search>
+            </field>
+        </record>
+       <record id="expired_lots_kanban" model="ir.ui.view">
+            <field name="name">expired.lots.kanban</field>
+            <field name="model">expired.lots</field>
+            <field name="arch" type="xml">
+                <kanban class="o_kanban_dashboard o_emphasize_colors" js_class="noi_expired_lots" create="0" group_create="false">
+                    <field name="name" invisible="1"/>
+                    <templates>
+<!--                        <t t-name="kanban-menu" />-->
+                        <t t-name="kanban-box"/>
+                    </templates>
+                </kanban>
+            </field>
+        </record>
+
+        <record id="action_expired_lots_dashboard" model="ir.actions.act_window">
+            <field name="name">Lot Expiration Dashboard</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">expired.lots</field>
+            <field name="view_mode">kanban</field>
+        </record>
+        <menuitem id="menu_expired_lots_dashboard"
+                  name="Lot Expiration Dashboard"
+                  parent="stock.menu_stock_root"
+                  action="action_expired_lots_dashboard"
+                  sequence="1"/>
+
+    </data>
+</odoo>
