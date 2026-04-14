@@ -21,14 +21,18 @@ class StockCardView(models.TransientModel):
     product_in = fields.Float()
     product_out = fields.Float()
     picking_id = fields.Many2one(comodel_name="stock.picking")
-    # NEW: Add partner_id and description for report columns
+    # NEW: Fields for report columns
     partner_id = fields.Many2one(comodel_name="res.partner", string="Partner")
     description = fields.Char()
+    location_from = fields.Char(string="From Location")
+    location_to = fields.Char(string="To Location")
+    source_document = fields.Char(string="Source Document")
 
     def name_get(self):
         result = []
         for rec in self:
-            name = rec.reference or ""
+            # FIXED: Use picking name or reference for document #
+            name = rec.picking_id.name if rec.picking_id else (rec.reference or "")
             if rec.picking_id and rec.picking_id.origin:
                 name = "{} ({})".format(name, rec.picking_id.origin)
             result.append((rec.id, name))
@@ -43,7 +47,7 @@ class StockCardReport(models.TransientModel):
     date_from = fields.Date()
     date_to = fields.Date()
     product_ids = fields.Many2many(comodel_name="product.product")
-    # FIXED: Removed required=True to allow empty location
+    # FIXED: Optional location (removed required)
     location_id = fields.Many2one(comodel_name="stock.location")
 
     # Data fields
@@ -58,13 +62,12 @@ class StockCardReport(models.TransientModel):
         date_from = self.date_from or "0001-01-01"
         date_to = self.date_to or fields.Date.context_today(self)
         
-        # FIXED: Handle optional location - fetch all company locations if empty
+        # FIXED: Handle optional location - all company locations if empty
         if self.location_id:
             locations = self.env["stock.location"].search(
                 [("id", "child_of", [self.location_id.id])]
             )
         else:
-            # Get all stock locations from company warehouses
             warehouses = self.env["stock.warehouse"].search(
                 [("company_id", "=", self.env.company.id)]
             )
@@ -79,7 +82,7 @@ class StockCardReport(models.TransientModel):
         location_ids = tuple(locations.ids) if locations.ids else (0,)
         product_ids = tuple(self.product_ids.ids) if self.product_ids.ids else (0,)
         
-        # FIXED: SQL query with proper CASE statements and new fields
+        # FIXED: SQL with proper fields and CASE statements
         self._cr.execute(
             """
             SELECT move.date, move.product_id, move.product_qty,
@@ -92,8 +95,14 @@ class StockCardReport(models.TransientModel):
                 CASE WHEN move.date < %s THEN TRUE ELSE FALSE END as is_initial,
                 move.picking_id,
                 move.partner_id,
-                move.name as description
+                move.name as description,
+                loc_src.name as location_from,
+                loc_dest.name as location_to,
+                COALESCE(picking.origin, picking.name, move.reference) as source_document
             FROM stock_move move
+            LEFT JOIN stock_location loc_src ON move.location_id = loc_src.id
+            LEFT JOIN stock_location loc_dest ON move.location_dest_id = loc_dest.id
+            LEFT JOIN stock_picking picking ON move.picking_id = picking.id
             WHERE (move.location_id IN %s OR move.location_dest_id IN %s)
                 AND move.state = 'done' 
                 AND move.product_id IN %s

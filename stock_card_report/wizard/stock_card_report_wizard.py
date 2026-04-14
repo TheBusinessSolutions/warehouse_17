@@ -11,7 +11,7 @@ class StockCardReportWizard(models.TransientModel):
     date_range_id = fields.Many2one(comodel_name="date.range", string="Period")
     date_from = fields.Date(string="Start Date")
     date_to = fields.Date(string="End Date")
-    # FIXED: Removed required=True to allow optional location
+    # FIXED: Optional location (removed required=True)
     location_id = fields.Many2one(
         comodel_name="stock.location", string="Location", required=False
     )

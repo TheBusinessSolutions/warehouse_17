@@ -7,6 +7,7 @@ from odoo.addons.report_xlsx_helper.report.report_xlsx_format import (
     XLS_HEADERS,
 )
 
+# FIXED: Proper logger initialization
 _logger = logging.getLogger(__name__)
 
 
@@ -52,7 +53,7 @@ class ReportStockCardReportXlsx(models.AbstractModel):
         initial_template = {
             "1_ref": {
                 "data": {"value": "Initial", "format": FORMATS["format_tcell_center"]},
-                "colspan": 7,
+                "colspan": 9,
             },
             "2_balance": {
                 "data": {
@@ -61,7 +62,7 @@ class ReportStockCardReportXlsx(models.AbstractModel):
                 }
             },
         }
-        # FIXED: Added new columns for Location, Description, Partner
+        # FIXED: Added new columns for From/To Location, Source Document, etc.
         stock_card_template = {
             "1_date": {
                 "header": {"value": "Date"},
@@ -77,25 +78,41 @@ class ReportStockCardReportXlsx(models.AbstractModel):
                     "value": self._render("reference"),
                     "format": FORMATS["format_tcell_left"],
                 },
-                "width": 20,
+                "width": 18,
             },
-            "3_location_name": {
-                "header": {"value": "Location"},
+            "3_location_from": {
+                "header": {"value": "From"},
                 "data": {
-                    "value": self._render("location_name"),
+                    "value": self._render("location_from"),
                     "format": FORMATS["format_tcell_left"],
                 },
-                "width": 25,
+                "width": 20,
             },
-            "4_description": {
+            "4_location_to": {
+                "header": {"value": "To"},
+                "data": {
+                    "value": self._render("location_to"),
+                    "format": FORMATS["format_tcell_left"],
+                },
+                "width": 20,
+            },
+            "5_source_doc": {
+                "header": {"value": "Source Doc"},
+                "data": {
+                    "value": self._render("source_document"),
+                    "format": FORMATS["format_tcell_left"],
+                },
+                "width": 15,
+            },
+            "6_description": {
                 "header": {"value": "Description"},
                 "data": {
                     "value": self._render("description"),
                     "format": FORMATS["format_tcell_left"],
                 },
-                "width": 30,
+                "width": 25,
             },
-            "5_partner": {
+            "7_partner": {
                 "header": {"value": "Partner"},
                 "data": {
                     "value": self._render("partner"),
@@ -103,17 +120,17 @@ class ReportStockCardReportXlsx(models.AbstractModel):
                 },
                 "width": 20,
             },
-            "6_input": {
-                "header": {"value": "Qty In"},
+            "8_input": {
+                "header": {"value": "In"},
                 "data": {"value": self._render("input")},
-                "width": 12,
+                "width": 10,
             },
-            "7_output": {
-                "header": {"value": "Qty Out"},
+            "9_output": {
+                "header": {"value": "Out"},
                 "data": {"value": self._render("output")},
-                "width": 12,
+                "width": 10,
             },
-            "8_balance": {
+            "10_balance": {
                 "header": {"value": "Balance"},
                 "data": {"value": self._render("balance")},
                 "width": 12,
@@ -183,20 +200,18 @@ class ReportStockCardReportXlsx(models.AbstractModel):
         )
         for line in product_lines:
             balance += line.product_in - line.product_out
-            partner_name = line.partner_id.name if line.partner_id else ""
-            location_name = (
-                line.location_dest_id.display_name if line.product_in > 0 and line.location_dest_id
-                else line.location_id.display_name if line.location_id
-                else ""
-            )
+            # FIXED: Proper document reference
+            reference = line.picking_id.name if line.picking_id else (line.reference or "")
             row_pos = self._write_line(
                 ws, row_pos, ws_params, col_specs_section="data",
                 render_space={
                     "date": line.date.strftime("%Y-%m-%d %H:%M") if line.date else "",
-                    "reference": line.display_name or "",
-                    "location_name": location_name,
+                    "reference": reference,
+                    "location_from": line.location_from or (line.location_id.display_name if line.location_id else ""),
+                    "location_to": line.location_to or (line.location_dest_id.display_name if line.location_dest_id else ""),
+                    "source_document": line.source_document or "",
                     "description": line.description or "",
-                    "partner": partner_name,
+                    "partner": line.partner_id.name if line.partner_id else "",
                     "input": line.product_in or 0,
                     "output": line.product_out or 0,
                     "balance": balance,
