@@ -15,7 +15,8 @@
         <field name="report_name">stock_card_report.report_stock_card_report_pdf</field>
         <field name="report_file">stock_card_report.report_stock_card_report_pdf</field>
         <!-- FIXED: Handle empty location in filename -->
-        <field name="print_report_name" eval="object.location_id and 'Stock Card - %s' % object.location_id.complete_name or 'Stock Card - All Locations'"/>
+        <field name="print_report_name" 
+            eval="(object.location_id and 'Stock Card - {}'.format(object.location_id.complete_name)) or 'Stock Card - All Locations'"/>
         <field name="paperformat_id" ref="stock_card_report.paperformat_stock_card"/>
     </record>
 
