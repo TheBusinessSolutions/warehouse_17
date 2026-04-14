@@ -20,7 +20,7 @@
     "assets": {
         "web.assets_backend": [
             "stock_card_report/static/src/css/**/*",
-            "stock_card_report/static/src/js/**/*",
+            "stock_card_report/static/src/js/stock_card_report_backend.esm.js",
         ]
     },
     "installable": True,
