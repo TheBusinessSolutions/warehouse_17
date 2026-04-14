@@ -4,19 +4,19 @@
     <record id="action_report_stock_card_report_html" model="ir.actions.client">
         <field name="name">Stock Card Report</field>
         <field name="tag">stock_card_report_backend</field>
-        <field name="context" eval="{'active_model': 'report.stock.card.report'}" />
+        <field name="context" eval="{'active_model': 'report.stock.card.report'}"/>
     </record>
 
-    <!-- PDF Report Action - Fixed for Odoo 17 -->
+    <!-- PDF Report Action - Fixed print_report_name -->
     <record id="action_stock_card_report_pdf" model="ir.actions.report">
         <field name="name">Stock Card PDF</field>
         <field name="model">report.stock.card.report</field>
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">stock_card_report.report_stock_card_report_pdf</field>
         <field name="report_file">stock_card_report.report_stock_card_report_pdf</field>
-        <field name="print_report_name" eval="'Stock Card Report - [%s]' % (object.location_id.complete_name if object.location_id else 'All Locations')"/>
+        <!-- Fixed: Simplified eval expression -->
+        <field name="print_report_name" eval="object.location_id and 'Stock Card Report - [%s]' % object.location_id.complete_name or 'Stock Card Report - All Locations'"/>
         <field name="paperformat_id" ref="stock_card_report.paperformat_stock_card"/>
-        <!-- Removed binding_model_id and binding_type - not needed for wizard reports -->
     </record>
 
     <!-- XLSX Report Action -->
@@ -26,6 +26,5 @@
         <field name="report_type">xlsx</field>
         <field name="report_name">stock_card_report.report_stock_card_report_xlsx</field>
         <field name="report_file">Stock Card Report</field>
-        <!-- Removed binding_model_id and binding_type - not needed for wizard reports -->
     </record>
 </odoo>
