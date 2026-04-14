@@ -11,7 +11,7 @@ class StockCardReportWizard(models.TransientModel):
     date_range_id = fields.Many2one(comodel_name="date.range", string="Period")
     date_from = fields.Date(string="Start Date")
     date_to = fields.Date(string="End Date")
-    # FIXED: Optional location + removed trailing spaces
+    # FIXED: Optional location (removed required=True)
     location_id = fields.Many2one(
         comodel_name="stock.location", string="Location", required=False
     )
@@ -26,7 +26,7 @@ class StockCardReportWizard(models.TransientModel):
             self.date_to = self.date_range_id.date_end
 
     def button_export_html(self):
-        self.ensure_one()  # FIXED: was "ensu re_one"
+        self.ensure_one()
         action = self.env.ref("stock_card_report.action_report_stock_card_report_html")
         vals = action.sudo().read()[0]
         context = vals.get("context", {})

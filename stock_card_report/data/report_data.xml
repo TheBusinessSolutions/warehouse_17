@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
-    <!-- HTML Client Action -->
+    <!-- HTML Client Action - FIXED: Proper tag registration -->
     <record id="action_report_stock_card_report_html" model="ir.actions.client">
         <field name="name">Stock Card Report</field>
         <field name="tag">stock_card_report_backend</field>
         <field name="context" eval="{'active_model': 'report.stock.card.report'}"/>
     </record>
 
-    <!-- PDF Report Action -->
+    <!-- PDF Report Action - FIXED: print_report_name with empty location handling -->
     <record id="action_stock_card_report_pdf" model="ir.actions.report">
         <field name="name">Stock Card PDF</field>
         <field name="model">report.stock.card.report</field>
@@ -22,13 +22,12 @@
         <field name="paperformat_id" ref="stock_card_report.paperformat_stock_card"/>
     </record>
 
-    <!-- XLSX Report Action - FIXED -->
+    <!-- XLSX Report Action -->
     <record id="action_stock_card_report_xlsx" model="ir.actions.report">
         <field name="name">Stock Card XLSX</field>
         <field name="model">report.stock.card.report</field>
         <field name="report_type">xlsx</field>
         <field name="report_name">stock_card_report.report_stock_card_report_xlsx</field>
-        <field name="report_file">Stock_Card_Report</field>
-        <!-- Removed binding fields - not needed for wizard reports -->
+        <field name="report_file">Stock Card Report</field>
     </record>
 </odoo>
