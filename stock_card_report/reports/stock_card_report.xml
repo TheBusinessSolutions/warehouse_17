@@ -38,7 +38,7 @@
         </div>
     </template>
 
-    <!-- PDF Report Template -->
+    <!-- PDF Report Template - FIXED: Correct template ID -->
     <template id="report_stock_card_report_pdf">
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="o">
@@ -63,19 +63,14 @@
                 
                 <!-- Table -->
                 <div class="act_as_table data_table mt-2" style="width: 100%;">
-                    <!-- Header with NEW columns -->
+                    <!-- Header -->
                     <t t-call="stock_card_report.report_stock_card_lines_header"/>
                     
                     <!-- Initial Balance -->
                     <t t-set="initial" t-value="o._get_initial(o.results.filtered(lambda l: l.product_id == product and l.is_initial))"/>
                     <div class="act_as_row lines">
                         <div class="act_as_cell"/>
-                        <div class="act_as_cell"/>
-                        <div class="act_as_cell"/>
-                        <div class="act_as_cell"/>
-                        <div class="act_as_cell"/>
-                        <div class="act_as_cell"/>
-                        <div class="act_as_cell"/>
+                        <div class="act_as_cell">Initial</div>
                         <div class="act_as_cell"/>
                         <div class="act_as_cell"/>
                         <div class="act_as_cell right">
@@ -95,7 +90,7 @@
         </t>
     </template>
 
-    <!-- Filters Template - Shows "All Locations" when empty -->
+    <!-- Filters Template -->
     <template id="report_stock_card_report_filters">
         <div class="act_as_table data_table mb-2" style="width: 100%;">
             <div class="act_as_row labels bg-200">
@@ -114,17 +109,12 @@
         </div>
     </template>
 
-    <!-- Header Template - NEW COLUMNS ADDED -->
+    <!-- Header Template -->
     <template id="report_stock_card_lines_header">
         <div class="act_as_thead">
             <div class="act_as_row labels bg-100">
                 <div class="act_as_cell"><strong>Date</strong></div>
-                <div class="act_as_cell"><strong>Document #</strong></div>
-                <div class="act_as_cell"><strong>From</strong></div>
-                <div class="act_as_cell"><strong>To</strong></div>
-                <div class="act_as_cell"><strong>Source Doc</strong></div>
-                <div class="act_as_cell"><strong>Description</strong></div>
-                <div class="act_as_cell"><strong>Partner</strong></div>
+                <div class="act_as_cell"><strong>Reference</strong></div>
                 <div class="act_as_cell"><strong>In</strong></div>
                 <div class="act_as_cell"><strong>Out</strong></div>
                 <div class="act_as_cell"><strong>Balance</strong></div>
@@ -132,46 +122,21 @@
         </div>
     </template>
 
-    <!-- Line Template - NEW COLUMNS WITH PROPER VALUES -->
+    <!-- Line Template -->
     <template id="report_stock_card_lines">
         <div class="act_as_row lines">
-            <!-- Date -->
             <div class="act_as_cell left">
                 <t t-out="product_line.date.strftime('%Y-%m-%d') if product_line.date else ''"/>
             </div>
-            <!-- Document # - FIXED: Use picking name, not transient ID -->
             <div class="act_as_cell left">
                 <t t-out="product_line.picking_id.name if product_line.picking_id else (product_line.reference or '')"/>
             </div>
-            <!-- From Location - NEW -->
-            <div class="act_as_cell left">
-                <t t-out="product_line.location_from or (product_line.location_id.display_name if product_line.location_id else '')"/>
-            </div>
-            <!-- To Location - NEW -->
-            <div class="act_as_cell left">
-                <t t-out="product_line.location_to or (product_line.location_dest_id.display_name if product_line.location_dest_id else '')"/>
-            </div>
-            <!-- Source Document - NEW (SO/PO number) -->
-            <div class="act_as_cell left">
-                <t t-out="product_line.source_document or ''"/>
-            </div>
-            <!-- Description -->
-            <div class="act_as_cell left">
-                <t t-out="product_line.description or ''"/>
-            </div>
-            <!-- Partner -->
-            <div class="act_as_cell left">
-                <t t-out="product_line.partner_id.name if product_line.partner_id else ''"/>
-            </div>
-            <!-- Qty In -->
             <div class="act_as_cell right">
                 <t t-out="'{0:,.3f}'.format(product_line.product_in)"/>
             </div>
-            <!-- Qty Out -->
             <div class="act_as_cell right">
                 <t t-out="'{0:,.3f}'.format(product_line.product_out)"/>
             </div>
-            <!-- Balance -->
             <div class="act_as_cell right">
                 <t t-out="'{0:,.3f}'.format(product_balance)"/>
             </div>
