@@ -21,6 +21,7 @@ class StockCardView(models.TransientModel):
     product_in = fields.Float()
     product_out = fields.Float()
     picking_id = fields.Many2one(comodel_name="stock.picking")
+    # NEW: Add partner_id and description for report columns
     partner_id = fields.Many2one(comodel_name="res.partner", string="Partner")
     description = fields.Char()
 
@@ -38,13 +39,14 @@ class StockCardReport(models.TransientModel):
     _name = "report.stock.card.report"
     _description = "Stock Card Report"
 
-    # Filters fields, used for data computation
+    # Filters fields
     date_from = fields.Date()
     date_to = fields.Date()
     product_ids = fields.Many2many(comodel_name="product.product")
+    # FIXED: Removed required=True to allow empty location
     location_id = fields.Many2one(comodel_name="stock.location")
 
-    # Data fields, used to browse report data
+    # Data fields
     results = fields.Many2many(
         comodel_name="stock.card.view",
         compute="_compute_results",
@@ -56,19 +58,18 @@ class StockCardReport(models.TransientModel):
         date_from = self.date_from or "0001-01-01"
         date_to = self.date_to or fields.Date.context_today(self)
         
-        # Handle location filtering - if empty, use all company locations
+        # FIXED: Handle optional location - fetch all company locations if empty
         if self.location_id:
             locations = self.env["stock.location"].search(
                 [("id", "child_of", [self.location_id.id])]
             )
         else:
-            # Get all locations for the company's warehouses
+            # Get all stock locations from company warehouses
             warehouses = self.env["stock.warehouse"].search(
                 [("company_id", "=", self.env.company.id)]
             )
             location_ids = []
             for wh in warehouses:
-                # Include stock location and all child locations
                 all_locs = self.env["stock.location"].search(
                     [("id", "child_of", wh.lot_stock_id.ids)]
                 )
@@ -78,6 +79,7 @@ class StockCardReport(models.TransientModel):
         location_ids = tuple(locations.ids) if locations.ids else (0,)
         product_ids = tuple(self.product_ids.ids) if self.product_ids.ids else (0,)
         
+        # FIXED: SQL query with proper CASE statements and new fields
         self._cr.execute(
             """
             SELECT move.date, move.product_id, move.product_qty,

@@ -1,37 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Report Actions - Fixed for Odoo 17 -->
-    <record id="action_stock_card_report_pdf" model="ir.actions.report">
-        <field name="name">Stock Card Report PDF</field>
-        <field name="model">report.stock.card.report</field>
-        <field name="report_type">qweb-pdf</field>
-        <field name="report_name">stock_card_report.report_stock_card_report_pdf</field>
-        <field name="report_file">stock_card_report.report_stock_card_report_pdf</field>
-        <!-- Fixed: Use search domain instead of invalid ref -->
-        <field name="binding_model_id" model="ir.model" search="[('model', '=', 'report.stock.card.report')]"/>
-        <field name="binding_type">report</field>
-        <field name="paperformat_id" ref="web.paperformat_euro"/>
-    </record>
+    <!-- Internal Layout for PDF -->
+    <template id="internal_layout">
+        <div class="article">
+            <link href="/stock_card_report/static/src/css/report.css" rel="stylesheet"/>
+            <t t-out="0"/>
+        </div>
+        <div class="footer">
+            <div class="row">
+                <div class="col-6 custom_footer">
+                    <span t-out="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d')"/>
+                </div>
+                <div class="col-6 text-right custom_footer">
+                    <span class="page"/> / <span class="topage"/>
+                </div>
+            </div>
+        </div>
+    </template>
 
-    <record id="action_stock_card_report_xlsx" model="ir.actions.report">
-        <field name="name">Stock Card Report XLSX</field>
-        <field name="model">report.stock.card.report</field>
-        <field name="report_type">xlsx</field>
-        <field name="report_name">stock_card_report.report_stock_card_report_xlsx</field>
-        <field name="report_file">stock_card_report.report_stock_card_report_xlsx</field>
-        <!-- Fixed: Use search domain instead of invalid ref -->
-        <field name="binding_model_id" model="ir.model" search="[('model', '=', 'report.stock.card.report')]"/>
-        <field name="binding_type">report</field>
-    </record>
-
-    <!-- HTML Client Action -->
-    <record id="action_report_stock_card_report_html" model="ir.actions.client">
-        <field name="name">Stock Card Report HTML</field>
-        <field name="tag">stock_card_report_backend</field>
-        <field name="context">{"model": "report.stock.card.report"}</field>
-    </record>
-
-    <!-- QWeb Templates -->
+    <!-- Report Buttons -->
     <template id="report_buttons">
         <div class="button_row mb-2">
             <button class="o_stock_card_reports_print btn btn-sm btn-secondary">
@@ -43,6 +30,7 @@
         </div>
     </template>
 
+    <!-- HTML Report Template -->
     <template id="report_stock_card_report_html">
         <div class="o_stock_card_reports_page">
             <t t-call="stock_card_report.report_buttons"/>
@@ -50,17 +38,18 @@
         </div>
     </template>
 
-    <!-- Fixed: Use web.external_layout for PDF compatibility -->
+    <!-- PDF Report Template - Fixed to use web.html_container -->
     <template id="report_stock_card_report_pdf">
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="o">
-                <t t-call="web.external_layout">
+                <t t-call="stock_card_report.internal_layout">
                     <t t-call="stock_card_report.report_stock_card_report_base"/>
                 </t>
             </t>
         </t>
     </template>
 
+    <!-- Base Report Template with New Columns -->
     <template id="report_stock_card_report_base">
         <t t-foreach="o.product_ids" t-as="product">
             <div class="page">
@@ -78,10 +67,7 @@
                     <t t-call="stock_card_report.report_stock_card_lines_header"/>
                     
                     <!-- Initial Balance Row -->
-                    <t
-                        t-set="initial"
-                        t-value="o._get_initial(o.results.filtered(lambda l: l.product_id == product and l.is_initial))"
-                    />
+                    <t t-set="initial" t-value="o._get_initial(o.results.filtered(lambda l: l.product_id == product and l.is_initial))"/>
                     <div class="act_as_row lines">
                         <div class="act_as_cell"/>
                         <div class="act_as_cell"/>
@@ -97,14 +83,8 @@
                     
                     <!-- Transaction Lines -->
                     <t t-set="product_balance" t-value="initial"/>
-                    <t
-                        t-foreach="o.results.filtered(lambda l: l.product_id == product and not l.is_initial)"
-                        t-as="product_line"
-                    >
-                        <t
-                            t-set="product_balance"
-                            t-value="product_balance + product_line.product_in - product_line.product_out"
-                        />
+                    <t t-foreach="o.results.filtered(lambda l: l.product_id == product and not l.is_initial)" t-as="product_line">
+                        <t t-set="product_balance" t-value="product_balance + product_line.product_in - product_line.product_out"/>
                         <t t-call="stock_card_report.report_stock_card_lines"/>
                     </t>
                 </div>
@@ -113,6 +93,7 @@
         </t>
     </template>
 
+    <!-- Filters Template - Shows "All Locations" when empty -->
     <template id="report_stock_card_report_filters">
         <div class="act_as_table data_table mb-2" style="width: 100%;">
             <div class="act_as_row labels bg-200">
@@ -121,12 +102,8 @@
                 <div class="act_as_cell"><strong>Location</strong></div>
             </div>
             <div class="act_as_row">
-                <div class="act_as_cell">
-                    <span t-field="o.date_from"/>
-                </div>
-                <div class="act_as_cell">
-                    <span t-field="o.date_to"/>
-                </div>
+                <div class="act_as_cell"><span t-field="o.date_from"/></div>
+                <div class="act_as_cell"><span t-field="o.date_to"/></div>
                 <div class="act_as_cell">
                     <span t-field="o.location_id" t-if="o.location_id"/>
                     <span t-if="not o.location_id">All Locations</span>
@@ -135,6 +112,7 @@
         </div>
     </template>
 
+    <!-- Header Template with New Columns -->
     <template id="report_stock_card_lines_header">
         <div class="act_as_thead">
             <div class="act_as_row labels bg-100">
@@ -150,6 +128,7 @@
         </div>
     </template>
 
+    <!-- Line Template with New Columns -->
     <template id="report_stock_card_lines">
         <div class="act_as_row lines">
             <div class="act_as_cell left">

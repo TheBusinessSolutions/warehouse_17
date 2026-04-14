@@ -61,6 +61,7 @@ class ReportStockCardReportXlsx(models.AbstractModel):
                 }
             },
         }
+        # FIXED: Added new columns for Location, Description, Partner
         stock_card_template = {
             "1_date": {
                 "header": {"value": "Date"},
@@ -120,7 +121,7 @@ class ReportStockCardReportXlsx(models.AbstractModel):
         }
 
         ws_params = {
-            "ws_name": product.name[:31],  # Excel sheet name limit
+            "ws_name": product.name[:31],
             "generate_ws_method": "_stock_card_report",
             "title": "Stock Card - {}".format(product.name),
             "wanted_list_filter": [k for k in sorted(filter_template.keys())],
@@ -139,41 +140,29 @@ class ReportStockCardReportXlsx(models.AbstractModel):
         ws.set_footer(XLS_HEADERS["xls_footers"]["standard"])
         self._set_column_width(ws, ws_params)
         
-        # Title
         row_pos = 0
         row_pos = self._write_ws_title(ws, row_pos, ws_params, True)
         
         # Filter Table
         row_pos = self._write_line(
-            ws,
-            row_pos,
-            ws_params,
-            col_specs_section="header",
+            ws, row_pos, ws_params, col_specs_section="header",
             default_format=FORMATS["format_theader_blue_center"],
-            col_specs="col_specs_filter",
-            wanted_list="wanted_list_filter",
+            col_specs="col_specs_filter", wanted_list="wanted_list_filter",
         )
         row_pos = self._write_line(
-            ws,
-            row_pos,
-            ws_params,
-            col_specs_section="data",
+            ws, row_pos, ws_params, col_specs_section="data",
             render_space={
                 "date_from": objects.date_from or "",
                 "date_to": objects.date_to or "",
                 "location": objects.location_id.display_name if objects.location_id else "All Locations",
             },
-            col_specs="col_specs_filter",
-            wanted_list="wanted_list_filter",
+            col_specs="col_specs_filter", wanted_list="wanted_list_filter",
         )
         row_pos += 1
         
-        # Stock Card Table Header
+        # Header
         row_pos = self._write_line(
-            ws,
-            row_pos,
-            ws_params,
-            col_specs_section="header",
+            ws, row_pos, ws_params, col_specs_section="header",
             default_format=FORMATS["format_theader_blue_center"],
         )
         ws.freeze_panes(row_pos, 0)
@@ -183,13 +172,9 @@ class ReportStockCardReportXlsx(models.AbstractModel):
             objects.results.filtered(lambda l: l.product_id == product and l.is_initial)
         )
         row_pos = self._write_line(
-            ws,
-            row_pos,
-            ws_params,
-            col_specs_section="data",
+            ws, row_pos, ws_params, col_specs_section="data",
             render_space={"balance": balance},
-            col_specs="col_specs_initial",
-            wanted_list="wanted_list_initial",
+            col_specs="col_specs_initial", wanted_list="wanted_list_initial",
         )
         
         # Transaction Lines
@@ -199,20 +184,13 @@ class ReportStockCardReportXlsx(models.AbstractModel):
         for line in product_lines:
             balance += line.product_in - line.product_out
             partner_name = line.partner_id.name if line.partner_id else ""
-            
-            # Determine location name based on move direction
-            if line.product_in > 0 and line.location_dest_id:
-                location_name = line.location_dest_id.display_name
-            elif line.product_out > 0 and line.location_id:
-                location_name = line.location_id.display_name
-            else:
-                location_name = (line.location_dest_id or line.location_id or self.env["stock.location"]).display_name
-            
+            location_name = (
+                line.location_dest_id.display_name if line.product_in > 0 and line.location_dest_id
+                else line.location_id.display_name if line.location_id
+                else ""
+            )
             row_pos = self._write_line(
-                ws,
-                row_pos,
-                ws_params,
-                col_specs_section="data",
+                ws, row_pos, ws_params, col_specs_section="data",
                 render_space={
                     "date": line.date.strftime("%Y-%m-%d %H:%M") if line.date else "",
                     "reference": line.display_name or "",
