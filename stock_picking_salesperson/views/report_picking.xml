@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_picking_inherit_salesperson" inherit_id="stock.report_picking">
+        
+        <!-- Locate the block containing the Origin (Source Document) -->
+        <xpath expr="//div[@name='div_origin']" position="after">
+            
+            <!-- Only show if a salesperson was found -->
+            <div t-if="o.x_salesperson_name" class="col-auto" name="div_salesperson">
+                <strong>Salesperson:</strong>
+                <p t-field="o.x_salesperson_name"/>
+            </div>
+            
+        </xpath>
+
+    </template>
+</odoo>
