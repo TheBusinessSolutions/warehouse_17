@@ -7,14 +7,14 @@
         <field name="context" eval="{'active_model': 'report.stock.card.report'}"/>
     </record>
 
-    <!-- PDF Report Action - FIXED: Removed problematic eval -->
+    <!-- PDF Report Action - FIXED: static print_report_name -->
     <record id="action_stock_card_report_pdf" model="ir.actions.report">
         <field name="name">Stock Card PDF</field>
         <field name="model">report.stock.card.report</field>
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">stock_card_report.report_stock_card_report_pdf</field>
         <field name="report_file">stock_card_report.report_stock_card_report_pdf</field>
-        <!-- FIXED: Use static name or remove entirely - dynamic naming done in Python -->
+        <!-- FIXED: Use static string to avoid NameError during install -->
         <field name="print_report_name">Stock Card Report</field>
         <field name="paperformat_id" ref="stock_card_report.paperformat_stock_card"/>
     </record>
