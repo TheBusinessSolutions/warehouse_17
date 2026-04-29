@@ -63,5 +63,10 @@ class StockCardReportWizard(models.TransientModel):
             self._prepare_stock_card_report()
         )
 
-        action = self.env.ref("stock_card_report.action_stock_card_report_xlsx")
+        action = self.env.ref(
+            "stock_card_report.action_stock_card_report_xlsx"
+            if report_type == "xlsx"
+            else "stock_card_report.action_stock_card_report_pdf"
+        )
+
         return action.report_action(report)
