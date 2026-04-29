@@ -9,12 +9,7 @@
     "website": "https://github.com/OCA/stock-logistics-reporting",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "license": "AGPL-3",
-    "depends": [
-        "stock",
-        "date_range",
-        "report_xlsx",
-        "report_xlsx_helper",
-    ],    
+    "depends": ["stock", "date_range", "report_xlsx_helper"],
     "data": [
         "security/ir.model.access.csv",
         "data/paper_format.xml",
@@ -25,7 +20,7 @@
     "assets": {
         "web.assets_backend": [
             "stock_card_report/static/src/css/**/*",
-            "stock_card_report/static/src/js/**/*",
+            "stock_card_report/static/src/js/stock_card_report_backend.esm.js",
         ]
     },
     "installable": True,
