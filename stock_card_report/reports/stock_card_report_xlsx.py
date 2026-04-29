@@ -1,15 +1,13 @@
 # Copyright 2019 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-
 import logging
-
 from odoo import models
-
 from odoo.addons.report_xlsx_helper.report.report_xlsx_format import (
     FORMATS,
     XLS_HEADERS,
 )
 
+# FIXED: Proper logger initialization
 _logger = logging.getLogger(__name__)
 
 
@@ -64,6 +62,7 @@ class ReportStockCardReportXlsx(models.AbstractModel):
                 }
             },
         }
+        # Added lot_names and partner columns
         stock_card_template = {
             "1_date": {
                 "header": {"value": "Date"},
@@ -71,7 +70,7 @@ class ReportStockCardReportXlsx(models.AbstractModel):
                     "value": self._render("date"),
                     "format": FORMATS["format_tcell_date_left"],
                 },
-                "width": 25,
+                "width": 18,
             },
             "2_reference": {
                 "header": {"value": "Reference"},
@@ -79,27 +78,43 @@ class ReportStockCardReportXlsx(models.AbstractModel):
                     "value": self._render("reference"),
                     "format": FORMATS["format_tcell_left"],
                 },
-                "width": 25,
+                "width": 20,
             },
-            "3_input": {
+            "3_lot_names": {
+                "header": {"value": "Lot/Serial"},
+                "data": {
+                    "value": self._render("lot_names"),
+                    "format": FORMATS["format_tcell_left"],
+                },
+                "width": 22,
+            },
+            "4_partner": {
+                "header": {"value": "Partner"},
+                "data": {
+                    "value": self._render("partner"),
+                    "format": FORMATS["format_tcell_left"],
+                },
+                "width": 20,
+            },
+            "5_input": {
                 "header": {"value": "In"},
                 "data": {"value": self._render("input")},
-                "width": 25,
+                "width": 12,
             },
-            "4_output": {
+            "6_output": {
                 "header": {"value": "Out"},
                 "data": {"value": self._render("output")},
-                "width": 25,
+                "width": 12,
             },
-            "5_balance": {
+            "7_balance": {
                 "header": {"value": "Balance"},
                 "data": {"value": self._render("balance")},
-                "width": 25,
+                "width": 14,
             },
         }
 
         ws_params = {
-            "ws_name": product.name,
+            "ws_name": product.name[:31],  # Excel sheet name limit
             "generate_ws_method": "_stock_card_report",
             "title": "Stock Card - {}".format(product.name),
             "wanted_list_filter": [k for k in sorted(filter_template.keys())],
@@ -117,67 +132,62 @@ class ReportStockCardReportXlsx(models.AbstractModel):
         ws.set_header(XLS_HEADERS["xls_headers"]["standard"])
         ws.set_footer(XLS_HEADERS["xls_footers"]["standard"])
         self._set_column_width(ws, ws_params)
-        # Title
+        
         row_pos = 0
         row_pos = self._write_ws_title(ws, row_pos, ws_params, True)
+        
         # Filter Table
         row_pos = self._write_line(
-            ws,
-            row_pos,
-            ws_params,
-            col_specs_section="header",
+            ws, row_pos, ws_params, col_specs_section="header",
             default_format=FORMATS["format_theader_blue_center"],
-            col_specs="col_specs_filter",
-            wanted_list="wanted_list_filter",
+            col_specs="col_specs_filter", wanted_list="wanted_list_filter",
         )
         row_pos = self._write_line(
-            ws,
-            row_pos,
-            ws_params,
-            col_specs_section="data",
+            ws, row_pos, ws_params, col_specs_section="data",
             render_space={
                 "date_from": objects.date_from or "",
                 "date_to": objects.date_to or "",
-                "location": objects.location_id.display_name or "",
+                "location": objects.location_id.display_name if objects.location_id else "",
             },
-            col_specs="col_specs_filter",
-            wanted_list="wanted_list_filter",
+            col_specs="col_specs_filter", wanted_list="wanted_list_filter",
         )
         row_pos += 1
-        # Stock Card Table
+        
+        # Header
         row_pos = self._write_line(
-            ws,
-            row_pos,
-            ws_params,
-            col_specs_section="header",
+            ws, row_pos, ws_params, col_specs_section="header",
             default_format=FORMATS["format_theader_blue_center"],
         )
         ws.freeze_panes(row_pos, 0)
+        
+        # Initial Balance
         balance = objects._get_initial(
             objects.results.filtered(lambda l: l.product_id == product and l.is_initial)
         )
         row_pos = self._write_line(
-            ws,
-            row_pos,
-            ws_params,
-            col_specs_section="data",
+            ws, row_pos, ws_params, col_specs_section="data",
             render_space={"balance": balance},
-            col_specs="col_specs_initial",
-            wanted_list="wanted_list_initial",
+            col_specs="col_specs_initial", wanted_list="wanted_list_initial",
         )
+        
+        # Transaction Lines
         product_lines = objects.results.filtered(
             lambda l: l.product_id == product and not l.is_initial
         )
         for line in product_lines:
             balance += line.product_in - line.product_out
+            # Handle null values for XLSX export (fixes "can't convert null to object")
+            lot_display = line.lot_names if line.lot_names else "-"
+            partner_display = line.partner_id.name if line.partner_id else ""
+            reference = line.picking_id.name if line.picking_id else (line.reference or "")
+            
             row_pos = self._write_line(
-                ws,
-                row_pos,
-                ws_params,
-                col_specs_section="data",
+                ws, row_pos, ws_params, col_specs_section="data",
                 render_space={
-                    "date": line.date or "",
-                    "reference": line.display_name or "",
+                    "date": line.date.strftime("%Y-%m-%d %H:%M") if line.date else "",
+                    "reference": reference,
+                    "lot_names": lot_display,
+                    "partner": partner_display,
                     "input": line.product_in or 0,
                     "output": line.product_out or 0,
                     "balance": balance,

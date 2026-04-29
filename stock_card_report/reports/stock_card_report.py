@@ -1,8 +1,6 @@
 # Copyright 2019 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-
 import pytz
-
 from odoo import api, fields, models
 
 
@@ -23,12 +21,27 @@ class StockCardView(models.TransientModel):
     product_in = fields.Float()
     product_out = fields.Float()
     picking_id = fields.Many2one(comodel_name="stock.picking")
+    
+    # NEW: Lot/Serial tracking
+    lot_ids = fields.Many2many(comodel_name="stock.lot", string="Lots/Serials")
+    lot_names = fields.Char(string="Lot/Serial Numbers", compute="_compute_lot_names", store=False)
+    
+    # NEW: Partner name
+    partner_id = fields.Many2one(comodel_name="res.partner", string="Partner")
+
+    def _compute_lot_names(self):
+        """Compute comma-separated lot/serial names for display"""
+        for rec in self:
+            if rec.lot_ids:
+                rec.lot_names = ", ".join(rec.lot_ids.mapped("name"))
+            else:
+                rec.lot_names = "-"
 
     def name_get(self):
         result = []
         for rec in self:
-            name = rec.reference
-            if rec.picking_id.origin:
+            name = rec.reference or ""
+            if rec.picking_id and rec.picking_id.origin:
                 name = "{} ({})".format(name, rec.picking_id.origin)
             result.append((rec.id, name))
         return result
@@ -38,59 +51,99 @@ class StockCardReport(models.TransientModel):
     _name = "report.stock.card.report"
     _description = "Stock Card Report"
 
-    # Filters fields, used for data computation
+    # Filters fields
     date_from = fields.Date()
     date_to = fields.Date()
     product_ids = fields.Many2many(comodel_name="product.product")
     location_id = fields.Many2one(comodel_name="stock.location")
 
-    # Data fields, used to browse report data
+    # Data fields
     results = fields.Many2many(
         comodel_name="stock.card.view",
         compute="_compute_results",
-        help="Use compute fields, so there is nothing store in database",
+        help="Use compute fields, so there is nothing stored in database",
     )
 
     def _compute_results(self):
         self.ensure_one()
         date_from = self.date_from or "0001-01-01"
-        self.date_to = self.date_to or fields.Date.context_today(self)
+        date_to = self.date_to or fields.Date.context_today(self)
+        
+        # Get locations under selected location (single location mode)
         locations = self.env["stock.location"].search(
             [("id", "child_of", [self.location_id.id])]
         )
+        location_ids = tuple(locations.ids) if locations.ids else (0,)
+        product_ids = tuple(self.product_ids.ids) if self.product_ids.ids else (0,)
+        
+        # SQL query with Lot/Serial and Partner support
         self._cr.execute(
             """
-            SELECT move.date, move.product_id, move.product_qty,
-                move.product_uom_qty, move.product_uom, move.reference,
-                move.location_id, move.location_dest_id,
-                case when move.location_dest_id in %s
-                    then move.product_qty end as product_in,
-                case when move.location_id in %s
-                    then move.product_qty end as product_out,
-                case when move.date < %s then True else False end as is_initial,
-                move.picking_id
+            SELECT 
+                move.date, 
+                move.product_id, 
+                move.product_qty,
+                move.product_uom_qty, 
+                move.product_uom, 
+                move.reference,
+                move.location_id, 
+                move.location_dest_id,
+                CASE WHEN move.location_dest_id IN %s
+                    THEN move.product_qty ELSE 0 END as product_in,
+                CASE WHEN move.location_id IN %s
+                    THEN move.product_qty ELSE 0 END as product_out,
+                CASE WHEN move.date < %s THEN TRUE ELSE FALSE END as is_initial,
+                move.picking_id,
+                move.partner_id,
+                -- Subquery for lot/serial names (handles multiple lots)
+                (
+                    SELECT STRING_AGG(sl.name, ', ')
+                    FROM stock_move_line sml
+                    LEFT JOIN stock_lot sl ON sml.lot_id = sl.id
+                    WHERE sml.move_id = move.id AND sml.lot_id IS NOT NULL
+                ) as lot_names,
+                -- Array of lot IDs for Many2many field
+                ARRAY(
+                    SELECT sml.lot_id 
+                    FROM stock_move_line sml 
+                    WHERE sml.move_id = move.id AND sml.lot_id IS NOT NULL
+                ) as lot_ids_array
             FROM stock_move move
-            WHERE (move.location_id in %s or move.location_dest_id in %s)
-                and move.state = 'done' and move.product_id in %s
-                and CAST(move.date AS date) <= %s
+            WHERE (move.location_id IN %s OR move.location_dest_id IN %s)
+                AND move.state = 'done' 
+                AND move.product_id IN %s
+                AND CAST(move.date AS date) <= %s
             ORDER BY move.date, move.reference
-        """,
+            """,
             (
-                tuple(locations.ids),
-                tuple(locations.ids),
+                location_ids,
+                location_ids,
                 date_from,
-                tuple(locations.ids),
-                tuple(locations.ids),
-                tuple(self.product_ids.ids),
-                self.date_to,
+                location_ids,
+                location_ids,
+                product_ids,
+                date_to,
             ),
         )
         stock_card_results = self._cr.dictfetchall()
         ReportLine = self.env["stock.card.view"]
-        user_timezone = pytz.timezone(self.env.user.tz)
+        
+        # Timezone handling with fallback
+        user_tz = self.env.user.tz or "UTC"
+        user_timezone = pytz.timezone(user_tz)
+        
         new_results = []
         for line in stock_card_results:
-            line["date"] = line["date"].astimezone(user_timezone).replace(tzinfo=None)
+            if line["date"]:
+                line["date"] = line["date"].astimezone(user_timezone).replace(tzinfo=None)
+            
+            # Handle lot_ids_array: convert PostgreSQL array to list
+            lot_ids = line.pop("lot_ids_array", [])
+            if lot_ids and lot_ids != [None]:
+                line["lot_ids"] = [(6, 0, [lid for lid in lot_ids if lid])]
+            else:
+                line["lot_ids"] = [(6, 0, [])]
+            
             new_results.append(ReportLine.new(line).id)
         self.results = new_results
 
@@ -101,11 +154,10 @@ class StockCardReport(models.TransientModel):
 
     def print_report(self, report_type="qweb"):
         self.ensure_one()
-        action = (
-            report_type == "xlsx"
-            and self.env.ref("stock_card_report.action_stock_card_report_xlsx")
-            or self.env.ref("stock_card_report.action_stock_card_report_pdf")
-        )
+        if report_type == "xlsx":
+            action = self.env.ref("stock_card_report.action_stock_card_report_xlsx")
+        else:
+            action = self.env.ref("stock_card_report.action_stock_card_report_pdf")
         return action.report_action(self, config=False)
 
     def _get_html(self):
