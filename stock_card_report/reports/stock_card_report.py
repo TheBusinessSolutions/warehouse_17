@@ -22,7 +22,7 @@ class StockCardView(models.TransientModel):
     product_out = fields.Float()
     picking_id = fields.Many2one(comodel_name="stock.picking")
     
-    # NEW: Lot/Serial tracking fields
+    # NEW: Lot/Serial tracking
     lot_ids = fields.Many2many(comodel_name="stock.lot", string="Lots/Serials")
     lot_names = fields.Char(string="Lot/Serial Numbers", compute="_compute_lot_names", store=False)
     
@@ -51,13 +51,11 @@ class StockCardReport(models.TransientModel):
     _name = "report.stock.card.report"
     _description = "Stock Card Report"
 
-    # Filters fields
     date_from = fields.Date()
     date_to = fields.Date()
     product_ids = fields.Many2many(comodel_name="product.product")
     location_id = fields.Many2one(comodel_name="stock.location")
 
-    # Data fields
     results = fields.Many2many(
         comodel_name="stock.card.view",
         compute="_compute_results",
@@ -69,15 +67,13 @@ class StockCardReport(models.TransientModel):
         date_from = self.date_from or "0001-01-01"
         date_to = self.date_to or fields.Date.context_today(self)
         
-        # Get locations under selected location (single location mode)
         locations = self.env["stock.location"].search(
             [("id", "child_of", [self.location_id.id])]
         )
         location_ids = tuple(locations.ids) if locations.ids else (0,)
         product_ids = tuple(self.product_ids.ids) if self.product_ids.ids else (0,)
         
-        # SQL query with Lot/Serial and Partner support
-        # FIXED: CASE statements include ELSE 0, proper JOINs for lot data
+        # FIXED: SQL with proper CASE statements (ELSE 0) and lot subquery
         self._cr.execute(
             """
             SELECT 
@@ -96,14 +92,12 @@ class StockCardReport(models.TransientModel):
                 CASE WHEN move.date < %s THEN TRUE ELSE FALSE END as is_initial,
                 move.picking_id,
                 move.partner_id,
-                -- Subquery for lot/serial names (handles multiple lots, returns NULL if none)
                 (
                     SELECT STRING_AGG(sl.name, ', ')
                     FROM stock_move_line sml
                     LEFT JOIN stock_lot sl ON sml.lot_id = sl.id
                     WHERE sml.move_id = move.id AND sml.lot_id IS NOT NULL
                 ) as lot_names,
-                -- Array of lot IDs for Many2many field
                 ARRAY(
                     SELECT sml.lot_id 
                     FROM stock_move_line sml 
@@ -129,7 +123,6 @@ class StockCardReport(models.TransientModel):
         stock_card_results = self._cr.dictfetchall()
         ReportLine = self.env["stock.card.view"]
         
-        # Timezone handling with fallback for None
         user_tz = self.env.user.tz or "UTC"
         user_timezone = pytz.timezone(user_tz)
         
@@ -138,7 +131,6 @@ class StockCardReport(models.TransientModel):
             if line["date"]:
                 line["date"] = line["date"].astimezone(user_timezone).replace(tzinfo=None)
             
-            # Handle lot_ids_array: convert PostgreSQL array to list of IDs
             lot_ids = line.pop("lot_ids_array", [])
             if lot_ids and lot_ids != [None]:
                 line["lot_ids"] = [(6, 0, [lid for lid in lot_ids if lid])]

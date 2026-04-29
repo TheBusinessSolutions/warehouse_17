@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Internal Layout for PDF -->
     <template id="internal_layout">
         <div class="article">
             <link href="/stock_card_report/static/src/css/report.css" rel="stylesheet"/>
@@ -18,7 +17,6 @@
         </div>
     </template>
 
-    <!-- Report Buttons -->
     <template id="report_buttons">
         <div class="button_row mb-2">
             <button class="o_stock_card_reports_print btn btn-sm btn-secondary">
@@ -30,7 +28,6 @@
         </div>
     </template>
 
-    <!-- HTML Report Template -->
     <template id="report_stock_card_report_html">
         <div class="o_stock_card_reports_page">
             <t t-call="stock_card_report.report_buttons"/>
@@ -38,7 +35,6 @@
         </div>
     </template>
 
-    <!-- PDF Report Template -->
     <template id="report_stock_card_report_pdf">
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="o">
@@ -49,7 +45,6 @@
         </t>
     </template>
 
-    <!-- Base Report Template -->
     <template id="report_stock_card_report_base">
         <t t-foreach="o.product_ids" t-as="product">
             <div class="page">
@@ -57,16 +52,9 @@
                     <t t-set="title">Stock Card - <t t-out="product.name"/></t>
                     <h4 class="mt0 text-center" t-out="title"/>
                 </div>
-                
-                <!-- Filters -->
                 <t t-call="stock_card_report.report_stock_card_report_filters"/>
-                
-                <!-- Table -->
                 <div class="act_as_table data_table mt-2" style="width: 100%;">
-                    <!-- Header with Lot/Serial and Partner columns -->
                     <t t-call="stock_card_report.report_stock_card_lines_header"/>
-                    
-                    <!-- Initial Balance -->
                     <t t-set="initial" t-value="o._get_initial(o.results.filtered(lambda l: l.product_id == product and l.is_initial))"/>
                     <div class="act_as_row lines">
                         <div class="act_as_cell"/>
@@ -78,8 +66,6 @@
                             <strong><t t-out="'{0:,.3f}'.format(initial)"/></strong>
                         </div>
                     </div>
-                    
-                    <!-- Transaction Lines -->
                     <t t-set="product_balance" t-value="initial"/>
                     <t t-foreach="o.results.filtered(lambda l: l.product_id == product and not l.is_initial)" t-as="product_line">
                         <t t-set="product_balance" t-value="product_balance + product_line.product_in - product_line.product_out"/>
@@ -91,7 +77,6 @@
         </t>
     </template>
 
-    <!-- Filters Template -->
     <template id="report_stock_card_report_filters">
         <div class="act_as_table data_table mb-2" style="width: 100%;">
             <div class="act_as_row labels bg-200">
@@ -107,7 +92,6 @@
         </div>
     </template>
 
-    <!-- Header Template - Added Lot/Serial and Partner -->
     <template id="report_stock_card_lines_header">
         <div class="act_as_thead">
             <div class="act_as_row labels bg-100">
@@ -122,34 +106,27 @@
         </div>
     </template>
 
-    <!-- Line Template - FIXED: Use lot_names field that now exists in model -->
     <template id="report_stock_card_lines">
         <div class="act_as_row lines">
-            <!-- Date -->
             <div class="act_as_cell left">
                 <t t-out="product_line.date.strftime('%Y-%m-%d') if product_line.date else ''"/>
             </div>
-            <!-- Reference -->
             <div class="act_as_cell left">
                 <t t-out="product_line.picking_id.name if product_line.picking_id else (product_line.reference or '')"/>
             </div>
-            <!-- Lot/Serial - FIXED: lot_names field now exists in model -->
+            <!-- FIXED: lot_names field now exists in model -->
             <div class="act_as_cell left">
                 <t t-out="product_line.lot_names or '-'"/>
             </div>
-            <!-- Partner -->
             <div class="act_as_cell left">
                 <t t-out="product_line.partner_id.name if product_line.partner_id else ''"/>
             </div>
-            <!-- Qty In -->
             <div class="act_as_cell right">
                 <t t-out="'{0:,.3f}'.format(product_line.product_in)"/>
             </div>
-            <!-- Qty Out -->
             <div class="act_as_cell right">
                 <t t-out="'{0:,.3f}'.format(product_line.product_out)"/>
             </div>
-            <!-- Balance -->
             <div class="act_as_cell right">
                 <t t-out="'{0:,.3f}'.format(product_balance)"/>
             </div>

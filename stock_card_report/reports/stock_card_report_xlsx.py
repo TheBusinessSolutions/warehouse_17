@@ -113,7 +113,7 @@ class ReportStockCardReportXlsx(models.AbstractModel):
         }
 
         ws_params = {
-            "ws_name": product.name[:31],  # Excel sheet name limit (31 chars max)
+            "ws_name": product.name[:31],
             "generate_ws_method": "_stock_card_report",
             "title": "Stock Card - {}".format(product.name),
             "wanted_list_filter": [k for k in sorted(filter_template.keys())],
@@ -170,25 +170,20 @@ class ReportStockCardReportXlsx(models.AbstractModel):
             col_specs="col_specs_initial", wanted_list="wanted_list_initial",
         )
         
-        # Transaction Lines
+        # Transaction Lines - FIXED: All null values handled
         product_lines = objects.results.filtered(
             lambda l: l.product_id == product and not l.is_initial
         )
         for line in product_lines:
             balance += line.product_in - line.product_out
             # FIXED: Handle ALL null values to prevent "can't convert null to object"
-            lot_display = line.lot_names if line.lot_names else "-"
-            partner_display = line.partner_id.name if line.partner_id else ""
-            reference = line.picking_id.name if line.picking_id else (line.reference or "")
-            date_display = line.date.strftime("%Y-%m-%d %H:%M") if line.date else ""
-            
             row_pos = self._write_line(
                 ws, row_pos, ws_params, col_specs_section="data",
                 render_space={
-                    "date": date_display,
-                    "reference": reference,
-                    "lot_names": lot_display,
-                    "partner": partner_display,
+                    "date": line.date.strftime("%Y-%m-%d %H:%M") if line.date else "",
+                    "reference": line.picking_id.name if line.picking_id else (line.reference or ""),
+                    "lot_names": line.lot_names if line.lot_names else "-",
+                    "partner": line.partner_id.name if line.partner_id else "",
                     "input": line.product_in or 0,
                     "output": line.product_out or 0,
                     "balance": balance,
