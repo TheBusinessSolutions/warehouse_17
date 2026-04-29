@@ -2,11 +2,11 @@
 
 import AbstractAction from "web.AbstractAction";
 import ReportWidget from "web.Widget";
-import { registry } from "@web/core/registry";
-import { rpc } from "@web/core/network/rpc";
+import core from "web.core";
 
 export const report_backend = AbstractAction.extend({
     hasControlPanel: true,
+    // Stores all the parameters of the action.
     events: {
         "click .o_stock_card_reports_print": "print",
         "click .o_stock_card_reports_export": "export",
@@ -43,19 +43,24 @@ export const report_backend = AbstractAction.extend({
         this.set_html();
         return this._super();
     },
+    // Fetches the html and is previous report.context if any,
+    // else create it
     get_html: function () {
         var self = this;
-        // In Odoo 17, use the rpc service instead of this._rpc
-        return rpc("/web/dataset/call_kw", {
+        var defs = [];
+        return this._rpc({
             model: this.given_context.model,
             method: "get_html",
             args: [self.given_context],
-            kwargs: { context: self.odoo_context },
+            context: self.odoo_context,
         }).then(function (result) {
             self.html = result.html;
-            return self.update_cp();
+            defs.push(self.update_cp());
+            return $.when.apply($, defs);
         });
     },
+    // Updates the control panel and render the elements that have yet
+    // to be rendered
     update_cp: function () {
         if (this.$buttons) {
             var status = {
@@ -71,22 +76,22 @@ export const report_backend = AbstractAction.extend({
     },
     print: function () {
         var self = this;
-        return rpc("/web/dataset/call_kw", {
+        this._rpc({
             model: this.given_context.model,
             method: "print_report",
             args: [this.given_context.active_id, "qweb-pdf"],
-            kwargs: { context: self.odoo_context },
+            context: self.odoo_context,
         }).then(function (result) {
             self.do_action(result);
         });
     },
     export: function () {
         var self = this;
-        return rpc("/web/dataset/call_kw", {
+        this._rpc({
             model: this.given_context.model,
             method: "print_report",
             args: [this.given_context.active_id, "xlsx"],
-            kwargs: { context: self.odoo_context },
+            context: self.odoo_context,
         }).then(function (result) {
             self.do_action(result);
         });
@@ -95,6 +100,4 @@ export const report_backend = AbstractAction.extend({
         return Promise.resolve();
     },
 });
-
-// The standard Odoo 17 way to register a legacy action
-registry.category("actions").add("stock_card_report_backend", report_backend);
+core.action_registry.add("stock_card_report_backend", report_backend);

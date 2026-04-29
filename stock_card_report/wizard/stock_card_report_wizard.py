@@ -1,4 +1,4 @@
-# Copyright 2024 Your Company
+# Copyright 2019 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import api, fields, models
@@ -12,27 +12,17 @@ class StockCardReportWizard(models.TransientModel):
     date_range_id = fields.Many2one(comodel_name="date.range", string="Period")
     date_from = fields.Date(string="Start Date")
     date_to = fields.Date(string="End Date")
-    
-    # FIXED: Changed to Many2many for multi-location support
-    location_ids = fields.Many2many(
-        comodel_name="stock.location",
-        string="Locations",
-        domain="[('usage', 'in', ['internal', 'transit'])]",
-        help="Select one or more locations. Leave empty to include all company locations."
+    location_id = fields.Many2one(
+        comodel_name="stock.location", string="Location", required=True
     )
-    
     product_ids = fields.Many2many(
-        comodel_name="product.product",
-        string="Products",
-        required=True,
-        domain="[('type', 'in', ['product', 'consu'])]"
+        comodel_name="product.product", string="Products", required=True
     )
 
     @api.onchange("date_range_id")
     def _onchange_date_range_id(self):
-        if self.date_range_id:
-            self.date_from = self.date_range_id.date_start
-            self.date_to = self.date_range_id.date_end
+        self.date_from = self.date_range_id.date_start
+        self.date_to = self.date_range_id.date_end
 
     def button_export_html(self):
         self.ensure_one()
@@ -50,11 +40,13 @@ class StockCardReportWizard(models.TransientModel):
 
     def button_export_pdf(self):
         self.ensure_one()
-        return self._export("qweb-pdf")
+        report_type = "qweb-pdf"
+        return self._export(report_type)
 
     def button_export_xlsx(self):
         self.ensure_one()
-        return self._export("xlsx")
+        report_type = "xlsx"
+        return self._export(report_type)
 
     def _prepare_stock_card_report(self):
         self.ensure_one()
@@ -62,8 +54,7 @@ class StockCardReportWizard(models.TransientModel):
             "date_from": self.date_from,
             "date_to": self.date_to or fields.Date.context_today(self),
             "product_ids": [(6, 0, self.product_ids.ids)],
-            # FIXED: Pass list of location IDs (empty list = all locations)
-            "location_ids": [(6, 0, self.location_ids.ids)] if self.location_ids else [(5, 0, 0)],
+            "location_id": self.location_id.id,
         }
 
     def _export(self, report_type):

@@ -1,7 +1,10 @@
 # Copyright 2019 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+
 import logging
+
 from odoo import models
+
 from odoo.addons.report_xlsx_helper.report.report_xlsx_format import (
     FORMATS,
     XLS_HEADERS,
@@ -52,7 +55,7 @@ class ReportStockCardReportXlsx(models.AbstractModel):
         initial_template = {
             "1_ref": {
                 "data": {"value": "Initial", "format": FORMATS["format_tcell_center"]},
-                "colspan": 5,
+                "colspan": 4,
             },
             "2_balance": {
                 "data": {
@@ -61,7 +64,6 @@ class ReportStockCardReportXlsx(models.AbstractModel):
                 }
             },
         }
-        # Added lot_names column
         stock_card_template = {
             "1_date": {
                 "header": {"value": "Date"},
@@ -69,83 +71,35 @@ class ReportStockCardReportXlsx(models.AbstractModel):
                     "value": self._render("date"),
                     "format": FORMATS["format_tcell_date_left"],
                 },
-                "width": 18,
+                "width": 25,
             },
             "2_reference": {
-                "header": {"value": "Document #"},
+                "header": {"value": "Reference"},
                 "data": {
                     "value": self._render("reference"),
                     "format": FORMATS["format_tcell_left"],
                 },
-                "width": 20,
-            },
-            "3_location_from": {
-                "header": {"value": "From"},
-                "data": {
-                    "value": self._render("location_from"),
-                    "format": FORMATS["format_tcell_left"],
-                },
-                "width": 20,
-            },
-            "4_location_to": {
-                "header": {"value": "To"},
-                "data": {
-                    "value": self._render("location_to"),
-                    "format": FORMATS["format_tcell_left"],
-                },
-                "width": 20,
-            },
-            "5_lot_names": {
-                "header": {"value": "Lot/Serial"},
-                "data": {
-                    "value": self._render("lot_names"),
-                    "format": FORMATS["format_tcell_left"],
-                },
-                "width": 22,
-            },
-            "6_source_doc": {
-                "header": {"value": "Source Doc"},
-                "data": {
-                    "value": self._render("source_document"),
-                    "format": FORMATS["format_tcell_left"],
-                },
-                "width": 18,
-            },
-            "7_description": {
-                "header": {"value": "Description"},
-                "data": {
-                    "value": self._render("description"),
-                    "format": FORMATS["format_tcell_left"],
-                },
                 "width": 25,
             },
-            "8_partner": {
-                "header": {"value": "Partner"},
-                "data": {
-                    "value": self._render("partner"),
-                    "format": FORMATS["format_tcell_left"],
-                },
-                "width": 20,
-            },
-            "9_input": {
+            "3_input": {
                 "header": {"value": "In"},
                 "data": {"value": self._render("input")},
-                "width": 12,
+                "width": 25,
             },
-            "10_output": {
+            "4_output": {
                 "header": {"value": "Out"},
                 "data": {"value": self._render("output")},
-                "width": 12,
+                "width": 25,
             },
-            "11_balance": {
+            "5_balance": {
                 "header": {"value": "Balance"},
                 "data": {"value": self._render("balance")},
-                "width": 14,
+                "width": 25,
             },
         }
 
         ws_params = {
-            "ws_name": product.name[:31],
+            "ws_name": product.name,
             "generate_ws_method": "_stock_card_report",
             "title": "Stock Card - {}".format(product.name),
             "wanted_list_filter": [k for k in sorted(filter_template.keys())],
@@ -163,64 +117,67 @@ class ReportStockCardReportXlsx(models.AbstractModel):
         ws.set_header(XLS_HEADERS["xls_headers"]["standard"])
         ws.set_footer(XLS_HEADERS["xls_footers"]["standard"])
         self._set_column_width(ws, ws_params)
-        
+        # Title
         row_pos = 0
         row_pos = self._write_ws_title(ws, row_pos, ws_params, True)
-        
         # Filter Table
         row_pos = self._write_line(
-            ws, row_pos, ws_params, col_specs_section="header",
+            ws,
+            row_pos,
+            ws_params,
+            col_specs_section="header",
             default_format=FORMATS["format_theader_blue_center"],
-            col_specs="col_specs_filter", wanted_list="wanted_list_filter",
+            col_specs="col_specs_filter",
+            wanted_list="wanted_list_filter",
         )
         row_pos = self._write_line(
-            ws, row_pos, ws_params, col_specs_section="data",
+            ws,
+            row_pos,
+            ws_params,
+            col_specs_section="data",
             render_space={
                 "date_from": objects.date_from or "",
                 "date_to": objects.date_to or "",
-                "location": objects.location_id.display_name if objects.location_id else "All Locations",
+                "location": objects.location_id.display_name or "",
             },
-            col_specs="col_specs_filter", wanted_list="wanted_list_filter",
+            col_specs="col_specs_filter",
+            wanted_list="wanted_list_filter",
         )
         row_pos += 1
-        
-        # Header
+        # Stock Card Table
         row_pos = self._write_line(
-            ws, row_pos, ws_params, col_specs_section="header",
+            ws,
+            row_pos,
+            ws_params,
+            col_specs_section="header",
             default_format=FORMATS["format_theader_blue_center"],
         )
         ws.freeze_panes(row_pos, 0)
-        
-        # Initial Balance
         balance = objects._get_initial(
             objects.results.filtered(lambda l: l.product_id == product and l.is_initial)
         )
         row_pos = self._write_line(
-            ws, row_pos, ws_params, col_specs_section="data",
+            ws,
+            row_pos,
+            ws_params,
+            col_specs_section="data",
             render_space={"balance": balance},
-            col_specs="col_specs_initial", wanted_list="wanted_list_initial",
+            col_specs="col_specs_initial",
+            wanted_list="wanted_list_initial",
         )
-        
-        # Transaction Lines
         product_lines = objects.results.filtered(
             lambda l: l.product_id == product and not l.is_initial
         )
         for line in product_lines:
             balance += line.product_in - line.product_out
-            reference = line.picking_id.name if line.picking_id else (line.reference or "")
-            # Handle lot_names: show "-" if empty (no tracking)
-            lot_display = line.lot_names if line.lot_names else "-"
             row_pos = self._write_line(
-                ws, row_pos, ws_params, col_specs_section="data",
+                ws,
+                row_pos,
+                ws_params,
+                col_specs_section="data",
                 render_space={
-                    "date": line.date.strftime("%Y-%m-%d %H:%M") if line.date else "",
-                    "reference": reference,
-                    "location_from": line.location_from or (line.location_id.display_name if line.location_id else ""),
-                    "location_to": line.location_to or (line.location_dest_id.display_name if line.location_dest_id else ""),
-                    "lot_names": lot_display,
-                    "source_document": line.source_document or "",
-                    "description": line.description or "",
-                    "partner": line.partner_id.name if line.partner_id else "",
+                    "date": line.date or "",
+                    "reference": line.display_name or "",
                     "input": line.product_in or 0,
                     "output": line.product_out or 0,
                     "balance": balance,
