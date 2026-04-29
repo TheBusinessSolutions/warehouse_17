@@ -18,14 +18,20 @@ class ReportStockCardReportXlsx(models.AbstractModel):
 
     def generate_xlsx_report(self, workbook, data, objects):
         self._define_formats(workbook)
-        for product in objects.product_ids:
-            for ws_params in self._get_ws_params(workbook, data, product):
-                ws_name = ws_params.get("ws_name")
-                ws_name = self._check_ws_name(ws_name)
-                ws = workbook.add_worksheet(ws_name)
-                generate_ws_method = getattr(self, ws_params["generate_ws_method"])
-                generate_ws_method(workbook, ws, ws_params, data, objects, product)
 
+        for obj in objects:
+            for product in obj.product_ids:
+                for ws_params in self._get_ws_params(workbook, data, product):
+                    ws_name = self._check_ws_name(ws_params["ws_name"])
+                    ws = workbook.add_worksheet(ws_name)
+
+                    generate_ws_method = getattr(
+                        self, ws_params["generate_ws_method"]
+                    )
+
+                    generate_ws_method(
+                        workbook, ws, ws_params, data, obj, product
+                    )
     def _get_ws_params(self, wb, data, product):
         filter_template = {
             "1_date_from": {
@@ -97,7 +103,7 @@ class ReportStockCardReportXlsx(models.AbstractModel):
         }
 
         ws_params = {
-            "ws_name": product.name[:31],  # Excel sheet name limit (31 chars)
+            "ws_name": (product.display_name or "Product")[:31],  # Excel sheet name limit (31 chars)
             "generate_ws_method": "_stock_card_report",
             "title": "Stock Card - {}".format(product.name),
             "wanted_list_filter": [k for k in sorted(filter_template.keys())],
