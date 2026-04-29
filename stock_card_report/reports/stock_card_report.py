@@ -21,7 +21,9 @@ class StockCardView(models.TransientModel):
     product_in = fields.Float()
     product_out = fields.Float()
     picking_id = fields.Many2one(comodel_name="stock.picking")
-
+    # ADD THESE
+    lot_names = fields.Char()
+    partner_id = fields.Many2one("res.partner")
     def name_get(self):
         result = []
         for rec in self:
@@ -60,25 +62,55 @@ class StockCardReport(models.TransientModel):
         product_ids = tuple(self.product_ids.ids) if self.product_ids.ids else (0,)
         
         # FIXED: SQL with proper CASE statements (ELSE 0) and no trailing spaces
-        self._cr.execute(
-            """
-            SELECT move.date, move.product_id, move.product_qty,
-                move.product_uom_qty, move.product_uom, move.reference,
-                move.location_id, move.location_dest_id,
+        self._cr.execute("""
+            SELECT
+                move.date,
+                move.product_id,
+                move.product_qty,
+                move.product_uom_qty,
+                move.product_uom,
+                move.reference,
+                move.location_id,
+                move.location_dest_id,
+
                 CASE WHEN move.location_dest_id IN %s
-                    THEN move.product_qty ELSE 0 END as product_in,
+                    THEN move.product_qty ELSE 0 END AS product_in,
+
                 CASE WHEN move.location_id IN %s
-                    THEN move.product_qty ELSE 0 END as product_out,
-                CASE WHEN move.date < %s THEN TRUE ELSE FALSE END as is_initial,
-                move.picking_id
+                    THEN move.product_qty ELSE 0 END AS product_out,
+
+                CASE WHEN move.date < %s
+                    THEN TRUE ELSE FALSE END AS is_initial,
+
+                move.picking_id,
+
+                pick.partner_id,
+
+                STRING_AGG(DISTINCT lot.name, ', ') AS lot_names
+
             FROM stock_move move
-            WHERE (move.location_id IN %s OR move.location_dest_id IN %s)
-                AND move.state = 'done' 
+
+            LEFT JOIN stock_picking pick
+                ON move.picking_id = pick.id
+
+            LEFT JOIN stock_move_line sml
+                ON sml.move_id = move.id
+
+            LEFT JOIN stock_lot lot
+                ON sml.lot_id = lot.id
+
+            WHERE
+                (move.location_id IN %s OR move.location_dest_id IN %s)
+                AND move.state = 'done'
                 AND move.product_id IN %s
                 AND CAST(move.date AS date) <= %s
+
+            GROUP BY
+                move.id,
+                pick.partner_id
+
             ORDER BY move.date, move.reference
-            """,
-            (
+            """, (
                 location_ids,
                 location_ids,
                 date_from,
@@ -86,8 +118,8 @@ class StockCardReport(models.TransientModel):
                 location_ids,
                 product_ids,
                 date_to,
-            ),
-        )
+            )
+)
         stock_card_results = self._cr.dictfetchall()
         ReportLine = self.env["stock.card.view"]  # FIXED: trailing space
         
