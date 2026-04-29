@@ -23,10 +23,8 @@
         <field name="name">Stock Card XLSX</field>
         <field name="model">report.stock.card.report</field>
         <field name="report_type">xlsx</field>
-        <field
-            name="report_name"
-        >stock_card_report.report_stock_card_report_xlsx</field>
-        <field name="report_file">Stock Card Report</field>
+        <field name="report_name">stock_card_report.report_stock_card_report_xlsx</field>
+        <field name="report_file">stock_card_report.report_stock_card_report_xlsx</field>
     </record>
 
 </odoo>
