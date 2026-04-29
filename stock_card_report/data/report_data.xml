@@ -15,7 +15,10 @@
         <field name="report_name">stock_card_report.report_stock_card_report_pdf</field>
         <field name="report_file">stock_card_report.report_stock_card_report_pdf</field>
         <!-- IMPROVED: Handle multiple locations in filename -->
-        <field name="print_report_name" eval="'Stock Card Report - [%s]' % (', '.join(object.location_ids.mapped('complete_name')) if object.location_ids else 'All Internal Locations')"/>
+        <!-- <field name="print_report_name" eval="'Stock Card Report - [%s]' % (', '.join(object.location_ids.mapped('complete_name')) if object.location_ids else 'All Internal Locations')"/> -->
+        <field name="print_report_name">
+            'Stock Card Report - [%s]' % (', '.join(object.location_ids.mapped('complete_name')) if object.location_ids else 'All Locations')
+        </field>
         <field name="paperformat_id" ref="stock_card_report.paperformat_stock_card"/>
     </record>
 
