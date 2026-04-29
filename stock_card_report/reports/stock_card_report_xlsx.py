@@ -79,25 +79,41 @@ class ReportStockCardReportXlsx(models.AbstractModel):
                 },
                 "width": 25,
             },
-            "3_input": {
+            "3_lot_names": {
+                "header": {"value": "Lot/Serial"},
+                "data": {
+                    "value": self._render("lot_names"),
+                    "format": FORMATS["format_tcell_left"],
+                },
+                "width": 22,
+            },
+            "4_partner": {
+                "header": {"value": "Partner"},
+                "data": {
+                    "value": self._render("partner"),
+                    "format": FORMATS["format_tcell_left"],
+                },
+                "width": 20,
+            },
+            "5_input": {
                 "header": {"value": "In"},
                 "data": {"value": self._render("input")},
-                "width": 25,
+                "width": 12,
             },
-            "4_output": {
+            "6_output": {
                 "header": {"value": "Out"},
                 "data": {"value": self._render("output")},
-                "width": 25,
+                "width": 12,
             },
-            "5_balance": {
+            "7_balance": {
                 "header": {"value": "Balance"},
                 "data": {"value": self._render("balance")},
-                "width": 25,
+                "width": 14,
             },
         }
 
         ws_params = {
-            "ws_name": product.name[:31],  # Excel sheet name limit (31 chars)
+            "ws_name": product.name[:31],  # Excel sheet name limit (31 chars max)
             "generate_ws_method": "_stock_card_report",
             "title": "Stock Card - {}".format(product.name),
             "wanted_list_filter": [k for k in sorted(filter_template.keys())],
@@ -116,42 +132,30 @@ class ReportStockCardReportXlsx(models.AbstractModel):
         ws.set_footer(XLS_HEADERS["xls_footers"]["standard"])
         self._set_column_width(ws, ws_params)
         
-        # Title
         row_pos = 0
         row_pos = self._write_ws_title(ws, row_pos, ws_params, True)
         
         # Filter Table
         row_pos = self._write_line(
-            ws,
-            row_pos,
-            ws_params,
-            col_specs_section="header",
+            ws, row_pos, ws_params, col_specs_section="header",
             default_format=FORMATS["format_theader_blue_center"],
-            col_specs="col_specs_filter",
-            wanted_list="wanted_list_filter",
+            col_specs="col_specs_filter", wanted_list="wanted_list_filter",
         )
         # FIXED: Handle null values with fallbacks
         row_pos = self._write_line(
-            ws,
-            row_pos,
-            ws_params,
-            col_specs_section="data",
+            ws, row_pos, ws_params, col_specs_section="data",
             render_space={
                 "date_from": objects.date_from or "",
                 "date_to": objects.date_to or "",
                 "location": objects.location_id.display_name if objects.location_id else "",
             },
-            col_specs="col_specs_filter",
-            wanted_list="wanted_list_filter",
+            col_specs="col_specs_filter", wanted_list="wanted_list_filter",
         )
         row_pos += 1
         
-        # Stock Card Table Header
+        # Header
         row_pos = self._write_line(
-            ws,
-            row_pos,
-            ws_params,
-            col_specs_section="header",
+            ws, row_pos, ws_params, col_specs_section="header",
             default_format=FORMATS["format_theader_blue_center"],
         )
         ws.freeze_panes(row_pos, 0)
@@ -161,13 +165,9 @@ class ReportStockCardReportXlsx(models.AbstractModel):
             objects.results.filtered(lambda l: l.product_id == product and l.is_initial)
         )
         row_pos = self._write_line(
-            ws,
-            row_pos,
-            ws_params,
-            col_specs_section="data",
+            ws, row_pos, ws_params, col_specs_section="data",
             render_space={"balance": balance},
-            col_specs="col_specs_initial",
-            wanted_list="wanted_list_initial",
+            col_specs="col_specs_initial", wanted_list="wanted_list_initial",
         )
         
         # Transaction Lines
@@ -176,15 +176,19 @@ class ReportStockCardReportXlsx(models.AbstractModel):
         )
         for line in product_lines:
             balance += line.product_in - line.product_out
-            # FIXED: Handle all null values with fallbacks to prevent "can't convert null to object"
+            # FIXED: Handle ALL null values to prevent "can't convert null to object"
+            lot_display = line.lot_names if line.lot_names else "-"
+            partner_display = line.partner_id.name if line.partner_id else ""
+            reference = line.picking_id.name if line.picking_id else (line.reference or "")
+            date_display = line.date.strftime("%Y-%m-%d %H:%M") if line.date else ""
+            
             row_pos = self._write_line(
-                ws,
-                row_pos,
-                ws_params,
-                col_specs_section="data",
+                ws, row_pos, ws_params, col_specs_section="data",
                 render_space={
-                    "date": line.date.strftime("%Y-%m-%d %H:%M") if line.date else "",
-                    "reference": line.picking_id.name if line.picking_id else (line.reference or ""),
+                    "date": date_display,
+                    "reference": reference,
+                    "lot_names": lot_display,
+                    "partner": partner_display,
                     "input": line.product_in or 0,
                     "output": line.product_out or 0,
                     "balance": balance,
