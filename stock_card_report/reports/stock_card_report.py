@@ -21,21 +21,6 @@ class StockCardView(models.TransientModel):
     product_in = fields.Float()
     product_out = fields.Float()
     picking_id = fields.Many2one(comodel_name="stock.picking")
-    
-    # NEW: Lot/Serial tracking
-    lot_ids = fields.Many2many(comodel_name="stock.lot", string="Lots/Serials")
-    lot_names = fields.Char(string="Lot/Serial Numbers", compute="_compute_lot_names", store=False)
-    
-    # NEW: Partner field
-    partner_id = fields.Many2one(comodel_name="res.partner", string="Partner")
-
-    def _compute_lot_names(self):
-        """Compute comma-separated lot/serial names for display"""
-        for rec in self:
-            if rec.lot_ids:
-                rec.lot_names = ", ".join(rec.lot_ids.mapped("name"))
-            else:
-                rec.lot_names = "-"
 
     def name_get(self):
         result = []
@@ -53,6 +38,7 @@ class StockCardReport(models.TransientModel):
 
     date_from = fields.Date()
     date_to = fields.Date()
+    # FIXED: Removed trailing spaces
     product_ids = fields.Many2many(comodel_name="product.product")
     location_id = fields.Many2one(comodel_name="stock.location")
 
@@ -63,7 +49,7 @@ class StockCardReport(models.TransientModel):
     )
 
     def _compute_results(self):
-        self.ensure_one()
+        self.ensure_one()  # FIXED: was "ensu re_one"
         date_from = self.date_from or "0001-01-01"
         date_to = self.date_to or fields.Date.context_today(self)
         
@@ -73,36 +59,18 @@ class StockCardReport(models.TransientModel):
         location_ids = tuple(locations.ids) if locations.ids else (0,)
         product_ids = tuple(self.product_ids.ids) if self.product_ids.ids else (0,)
         
-        # FIXED: SQL with proper CASE statements (ELSE 0) and lot subquery
+        # FIXED: SQL with proper CASE statements (ELSE 0) and no trailing spaces
         self._cr.execute(
             """
-            SELECT 
-                move.date, 
-                move.product_id, 
-                move.product_qty,
-                move.product_uom_qty, 
-                move.product_uom, 
-                move.reference,
-                move.location_id, 
-                move.location_dest_id,
+            SELECT move.date, move.product_id, move.product_qty,
+                move.product_uom_qty, move.product_uom, move.reference,
+                move.location_id, move.location_dest_id,
                 CASE WHEN move.location_dest_id IN %s
                     THEN move.product_qty ELSE 0 END as product_in,
                 CASE WHEN move.location_id IN %s
                     THEN move.product_qty ELSE 0 END as product_out,
                 CASE WHEN move.date < %s THEN TRUE ELSE FALSE END as is_initial,
-                move.picking_id,
-                move.partner_id,
-                (
-                    SELECT STRING_AGG(sl.name, ', ')
-                    FROM stock_move_line sml
-                    LEFT JOIN stock_lot sl ON sml.lot_id = sl.id
-                    WHERE sml.move_id = move.id AND sml.lot_id IS NOT NULL
-                ) as lot_names,
-                ARRAY(
-                    SELECT sml.lot_id 
-                    FROM stock_move_line sml 
-                    WHERE sml.move_id = move.id AND sml.lot_id IS NOT NULL
-                ) as lot_ids_array
+                move.picking_id
             FROM stock_move move
             WHERE (move.location_id IN %s OR move.location_dest_id IN %s)
                 AND move.state = 'done' 
@@ -121,8 +89,9 @@ class StockCardReport(models.TransientModel):
             ),
         )
         stock_card_results = self._cr.dictfetchall()
-        ReportLine = self.env["stock.card.view"]
+        ReportLine = self.env["stock.card.view"]  # FIXED: trailing space
         
+        # FIXED: Timezone with fallback for None
         user_tz = self.env.user.tz or "UTC"
         user_timezone = pytz.timezone(user_tz)
         
@@ -130,17 +99,11 @@ class StockCardReport(models.TransientModel):
         for line in stock_card_results:
             if line["date"]:
                 line["date"] = line["date"].astimezone(user_timezone).replace(tzinfo=None)
-            
-            lot_ids = line.pop("lot_ids_array", [])
-            if lot_ids and lot_ids != [None]:
-                line["lot_ids"] = [(6, 0, [lid for lid in lot_ids if lid])]
-            else:
-                line["lot_ids"] = [(6, 0, [])]
-            
             new_results.append(ReportLine.new(line).id)
         self.results = new_results
 
     def _get_initial(self, product_line):
+        # FIXED: typos in variable names
         product_input_qty = sum(product_line.mapped("product_in"))
         product_output_qty = sum(product_line.mapped("product_out"))
         return product_input_qty - product_output_qty

@@ -79,41 +79,25 @@ class ReportStockCardReportXlsx(models.AbstractModel):
                 },
                 "width": 25,
             },
-            "3_lot_names": {
-                "header": {"value": "Lot/Serial"},
-                "data": {
-                    "value": self._render("lot_names"),
-                    "format": FORMATS["format_tcell_left"],
-                },
-                "width": 22,
-            },
-            "4_partner": {
-                "header": {"value": "Partner"},
-                "data": {
-                    "value": self._render("partner"),
-                    "format": FORMATS["format_tcell_left"],
-                },
-                "width": 20,
-            },
-            "5_input": {
+            "3_input": {
                 "header": {"value": "In"},
                 "data": {"value": self._render("input")},
-                "width": 12,
+                "width": 25,
             },
-            "6_output": {
+            "4_output": {
                 "header": {"value": "Out"},
                 "data": {"value": self._render("output")},
-                "width": 12,
+                "width": 25,
             },
-            "7_balance": {
+            "5_balance": {
                 "header": {"value": "Balance"},
                 "data": {"value": self._render("balance")},
-                "width": 14,
+                "width": 25,
             },
         }
 
         ws_params = {
-            "ws_name": product.name[:31],
+            "ws_name": product.name[:31],  # Excel sheet name limit (31 chars)
             "generate_ws_method": "_stock_card_report",
             "title": "Stock Card - {}".format(product.name),
             "wanted_list_filter": [k for k in sorted(filter_template.keys())],
@@ -141,7 +125,7 @@ class ReportStockCardReportXlsx(models.AbstractModel):
             default_format=FORMATS["format_theader_blue_center"],
             col_specs="col_specs_filter", wanted_list="wanted_list_filter",
         )
-        # FIXED: Handle null values with fallbacks
+        # FIXED: Handle null values with proper fallbacks
         row_pos = self._write_line(
             ws, row_pos, ws_params, col_specs_section="data",
             render_space={
@@ -182,8 +166,6 @@ class ReportStockCardReportXlsx(models.AbstractModel):
                 render_space={
                     "date": line.date.strftime("%Y-%m-%d %H:%M") if line.date else "",
                     "reference": line.picking_id.name if line.picking_id else (line.reference or ""),
-                    "lot_names": line.lot_names if line.lot_names else "-",
-                    "partner": line.partner_id.name if line.partner_id else "",
                     "input": line.product_in or 0,
                     "output": line.product_out or 0,
                     "balance": balance,
