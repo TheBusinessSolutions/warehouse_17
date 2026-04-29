@@ -57,6 +57,11 @@ class StockCardReportWizard(models.TransientModel):
         }
 
     def _export(self, report_type):
-        model = self.env["report.stock.card.report"]
-        report = model.create(self._prepare_stock_card_report())
-        return report.print_report(report_type)
+        self.ensure_one()
+
+        report = self.env["report.stock.card.report"].create(
+            self._prepare_stock_card_report()
+        )
+
+        action = self.env.ref("stock_card_report.action_stock_card_report_xlsx")
+        return action.report_action(report)
