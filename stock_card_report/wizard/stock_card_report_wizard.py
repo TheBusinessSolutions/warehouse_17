@@ -55,14 +55,16 @@ class StockCardReportWizard(models.TransientModel):
         self.ensure_one()
         return self._export("xlsx")
 
+    # stock_card_report_wizard.py
+
     def _prepare_stock_card_report(self):
         self.ensure_one()
         return {
-            "date_from": self.date_from,
-            "date_to": self.date_to or fields.Date.context_today(self),
-            "product_ids": [(6, 0, self.product_ids.ids)],
-            # CHANGED: Pass list of location IDs
-            "location_ids": [(6, 0, self.location_ids.ids)] if self.location_ids else [],
+            "date_from": self.date_from,  # Removed trailing space
+            "date_to": self.date_to or fields.Date.context_today(self),  # Removed trailing space
+            "product_ids": [(6, 0, self.product_ids.ids)],  # Removed trailing space
+            # FIX: Pass None instead of False for empty Many2one
+            "location_id": self.location_id.id if self.location_id else None,  # Removed trailing space
         }
 
     def _export(self, report_type):

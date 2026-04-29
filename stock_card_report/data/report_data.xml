@@ -8,16 +8,15 @@
     </record>
 
     <!-- PDF Report Action -->
+    <!-- report_data.xml - action_stock_card_report_pdf -->
     <record id="action_stock_card_report_pdf" model="ir.actions.report">
         <field name="name">Stock Card PDF</field>
         <field name="model">report.stock.card.report</field>
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">stock_card_report.report_stock_card_report_pdf</field>
         <field name="report_file">stock_card_report.report_stock_card_report_pdf</field>
-        <!-- IMPROVED: Handle multiple locations in filename -->
-        <!-- <field name="print_report_name" eval="'Stock Card Report - [%s]' % (', '.join(object.location_ids.mapped('complete_name')) if object.location_ids else 'All Internal Locations')"/> -->
         <field name="print_report_name">
-            'Stock Card Report - [%s]' % (', '.join(object.location_ids.mapped('complete_name')) if object.location_ids else 'All Locations')
+            (object.location_id and object.location_id.exists() and 'Stock Card - %s' % object.location_id.complete_name) or 'Stock Card - All Locations'
         </field>
         <field name="paperformat_id" ref="stock_card_report.paperformat_stock_card"/>
     </record>

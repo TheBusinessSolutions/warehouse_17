@@ -97,6 +97,7 @@
     </template>
 
     <!-- Filters Template -->
+    <!-- stock_card_report.xml - report_stock_card_report_filters template -->
     <template id="report_stock_card_report_filters">
         <div class="act_as_table data_table mb-2" style="width: 100%;">
             <div class="act_as_row labels bg-200">
@@ -105,16 +106,28 @@
                 <div class="act_as_cell"><strong>Location</strong></div>
             </div>
             <div class="act_as_row">
-                <div class="act_as_cell"><span t-field="o.date_from"/></div>
-                <div class="act_as_cell"><span t-field="o.date_to"/></div>
                 <div class="act_as_cell">
-                    <span t-field="o.location_id" t-if="o.location_id"/>
-                    <span t-if="not o.location_id">All Locations</span>
+                    <t t-if="o.date_from">
+                        <span t-field="o.date_from"/>
+                    </t>
+                </div>
+                <div class="act_as_cell">
+                    <t t-if="o.date_to">
+                        <span t-field="o.date_to"/>
+                    </t>
+                </div>
+                <div class="act_as_cell">
+                    <!-- Safe check for location_id -->
+                    <t t-if="o.location_id and o.location_id.exists()">
+                        <span t-field="o.location_id"/>
+                    </t>
+                    <t t-else="">
+                        <span>All Locations</span>
+                    </t>
                 </div>
             </div>
         </div>
     </template>
-
     <!-- Header Template - Added Lot/Serial Column -->
     <template id="report_stock_card_lines_header">
         <div class="act_as_thead">
