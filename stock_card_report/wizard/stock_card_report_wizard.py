@@ -1,10 +1,9 @@
-# Copyright 2019 Ecosoft Co., Ltd. (http://ecosoft.co.th)
+# Copyright 2024 Your Company
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-import logging
+
 from odoo import api, fields, models
 from odoo.tools.safe_eval import safe_eval
 
-_logger = logging.getLogger(__name__)
 
 class StockCardReportWizard(models.TransientModel):
     _name = "stock.card.report.wizard"
@@ -14,17 +13,19 @@ class StockCardReportWizard(models.TransientModel):
     date_from = fields.Date(string="Start Date")
     date_to = fields.Date(string="End Date")
     
-    # CHANGED: Use Many2many for multiple location selection
-    # Domain restricts to 'internal' usage by default, but user can remove filter if needed
+    # FIXED: Changed to Many2many for multi-location support
     location_ids = fields.Many2many(
         comodel_name="stock.location",
         string="Locations",
-        domain=[('usage', '=', 'internal')],
-        help="Select specific locations. If empty, defaults to all Internal (Physical) locations."
+        domain="[('usage', 'in', ['internal', 'transit'])]",
+        help="Select one or more locations. Leave empty to include all company locations."
     )
     
     product_ids = fields.Many2many(
-        comodel_name="product.product", string="Products", required=True
+        comodel_name="product.product",
+        string="Products",
+        required=True,
+        domain="[('type', 'in', ['product', 'consu'])]"
     )
 
     @api.onchange("date_range_id")
@@ -55,16 +56,14 @@ class StockCardReportWizard(models.TransientModel):
         self.ensure_one()
         return self._export("xlsx")
 
-    # stock_card_report_wizard.py
-
     def _prepare_stock_card_report(self):
         self.ensure_one()
         return {
-            "date_from": self.date_from,  # Removed trailing space
-            "date_to": self.date_to or fields.Date.context_today(self),  # Removed trailing space
-            "product_ids": [(6, 0, self.product_ids.ids)],  # Removed trailing space
-            # FIX: Pass None instead of False for empty Many2one
-            "location_id": self.location_id.id if self.location_id else None,  # Removed trailing space
+            "date_from": self.date_from,
+            "date_to": self.date_to or fields.Date.context_today(self),
+            "product_ids": [(6, 0, self.product_ids.ids)],
+            # FIXED: Pass list of location IDs (empty list = all locations)
+            "location_ids": [(6, 0, self.location_ids.ids)] if self.location_ids else [(5, 0, 0)],
         }
 
     def _export(self, report_type):
