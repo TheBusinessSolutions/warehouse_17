@@ -1,8 +1,10 @@
 # Copyright 2019 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+import logging
 from odoo import api, fields, models
 from odoo.tools.safe_eval import safe_eval
 
+_logger = logging.getLogger(__name__)
 
 class StockCardReportWizard(models.TransientModel):
     _name = "stock.card.report.wizard"
@@ -11,10 +13,16 @@ class StockCardReportWizard(models.TransientModel):
     date_range_id = fields.Many2one(comodel_name="date.range", string="Period")
     date_from = fields.Date(string="Start Date")
     date_to = fields.Date(string="End Date")
-    # FIXED: Optional location (removed required=True)
-    location_id = fields.Many2one(
-        comodel_name="stock.location", string="Location", required=False
+    
+    # CHANGED: Use Many2many for multiple location selection
+    # Domain restricts to 'internal' usage by default, but user can remove filter if needed
+    location_ids = fields.Many2many(
+        comodel_name="stock.location",
+        string="Locations",
+        domain=[('usage', '=', 'internal')],
+        help="Select specific locations. If empty, defaults to all Internal (Physical) locations."
     )
+    
     product_ids = fields.Many2many(
         comodel_name="product.product", string="Products", required=True
     )
@@ -53,8 +61,8 @@ class StockCardReportWizard(models.TransientModel):
             "date_from": self.date_from,
             "date_to": self.date_to or fields.Date.context_today(self),
             "product_ids": [(6, 0, self.product_ids.ids)],
-            # FIXED: Allow False when location is empty
-            "location_id": self.location_id.id if self.location_id else False,
+            # CHANGED: Pass list of location IDs
+            "location_ids": [(6, 0, self.location_ids.ids)] if self.location_ids else [],
         }
 
     def _export(self, report_type):
