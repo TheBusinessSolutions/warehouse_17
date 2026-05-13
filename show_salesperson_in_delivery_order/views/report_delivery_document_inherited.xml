@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_delivery_document_inherit_salesperson" inherit_id="stock.report_delivery_document">
+        <!-- Locate the Order (Origin) div by its name attribute -->
+        <xpath expr="//div[@name='div_origin']" position="after">
+            <div t-if="o.salesperson_id" class="col-auto col-3 mw-100 mb-2" name="div_salesperson">
+                <strong>Salesperson:</strong>
+                <p t-field="o.salesperson_id" class="m-0"/>
+            </div>
+        </xpath>
+    </template>
+</odoo>
