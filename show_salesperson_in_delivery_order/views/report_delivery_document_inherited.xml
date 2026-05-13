@@ -1,9 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- 1. Update Delivery Slip (from previous turn) with Translation support -->
     <template id="report_delivery_document_inherit_salesperson" inherit_id="stock.report_delivery_document">
-        <!-- Locate the Order (Origin) div by its name attribute -->
         <xpath expr="//div[@name='div_origin']" position="after">
             <div t-if="o.salesperson_id" class="col-auto col-3 mw-100 mb-2" name="div_salesperson">
+                <!-- This text is translatable via Settings > Translations -->
+                <strong>Salesperson:</strong>
+                <p t-field="o.salesperson_id" class="m-0"/>
+            </div>
+        </xpath>
+    </template>
+
+    <!-- 2. Add to Picking Operations (Picking Slip) -->
+    <template id="report_picking_inherit_salesperson" inherit_id="stock.report_picking">
+        <!-- In report_picking, the 'Order' field is usually inside a div with class 'row' or specific name -->
+        <xpath expr="//div[@name='div_origin']" position="after">
+            <div t-if="o.salesperson_id" class="col-auto col-3 mw-100 mb-2" name="div_salesperson_picking">
                 <strong>Salesperson:</strong>
                 <p t-field="o.salesperson_id" class="m-0"/>
             </div>
