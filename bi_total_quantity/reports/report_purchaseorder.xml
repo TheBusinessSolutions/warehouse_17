@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_purchaseorder_document_inherit" inherit_id="purchase.report_purchaseorder_document">
+        <xpath expr="//div[@id='total']" position="before">
+            <div class="row mt-3">
+                <div class="col-6 ml-auto">
+                    <table class="table table-sm">
+                        <tr class="border-black">
+                            <td><strong>Total Ordered Qty</strong></td>
+                            <td class="text-right"><span t-field="o.purchase_quantity"/></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Total Received Qty</strong></td>
+                            <td class="text-right"><span t-field="o.received_quantity"/></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Total Billed Qty</strong></td>
+                            <td class="text-right"><span t-field="o.bill_quantity"/></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </xpath>
+    </template>
+</odoo>

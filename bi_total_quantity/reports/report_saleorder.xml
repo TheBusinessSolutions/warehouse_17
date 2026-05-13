@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_saleorder_document_inherit" inherit_id="sale.report_saleorder_document">
+        <xpath expr="//div[@name='so_total_summary']" position="before">
+            <div class="row mt-3">
+                <div class="col-6 ml-auto">
+                    <table class="table table-sm">
+                        <tr class="border-black">
+                            <td><strong>Total Ordered Qty</strong></td>
+                            <td class="text-right">
+                                <span t-field="doc.order_quantity"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Total Delivered Qty</strong></td>
+                            <td class="text-right">
+                                <span t-field="doc.deliver_quantity"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Total Invoiced Qty</strong></td>
+                            <td class="text-right">
+                                <span t-field="doc.invoice_quantity"/>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </xpath>
+    </template>
+</odoo>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_delivery_document_inherit" inherit_id="stock.report_delivery_document">
+        <xpath expr="//table[@name='stock_move_table']" position="after">
+            <div class="row justify-content-end">
+                <div class="col-4">
+                    <table class="table table-sm">
+                        <tr class="border-black">
+                            <td><strong>Total Demand</strong></td>
+                            <td class="text-right">
+                                <span t-field="o.demand_quantity"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Total Done</strong></td>
+                            <td class="text-right">
+                                <span t-field="o.done_quantity"/>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </xpath>
+    </template>
+</odoo>

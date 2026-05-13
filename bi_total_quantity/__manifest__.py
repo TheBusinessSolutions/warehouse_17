@@ -19,6 +19,9 @@
         'views/sale_order_views.xml',
         'views/purchase_order_views.xml',
         'views/stock_picking_views.xml',
+        'reports/report_deliveryslip.xml',
+        'reports/report_purchaseorder.xml',
+        'reports/report_saleorder.xml',
     ],
     
     'installable': True,
