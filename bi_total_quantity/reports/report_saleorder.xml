@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <template id="report_saleorder_document_inherit" inherit_id="sale.report_saleorder_document">
-        <xpath expr="//div[@name='so_total_summary']" position="inside">
+        <xpath expr="//div[@name='so_total_summary']" position="before">
             <div style="page-break-inside: avoid;">
                 <div class="row justify-content-end">
                     <div class="col-4">
