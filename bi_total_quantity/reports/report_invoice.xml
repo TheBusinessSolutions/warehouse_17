@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_invoice_inherit_totals" inherit_id="account.report_invoice_document">
+        
+        <xpath expr="//table[@name='invoice_line_table']" position="after">
+            
+            <div t-if="o.picking_demand_quantity > 0" 
+                 class="row justify-content-end mt-4">
+                <div class="col-auto">
+                    <table class="table table-sm table-borderless" style="width: auto; border-top: 1px solid black;">
+                        <tbody>
+                            <tr>
+                                <td><strong>Total Billed Quantity:</strong></td>
+                                <td class="text-end">
+                                    <span t-field="o.picking_demand_quantity"/>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </xpath>
+    </template>
+</odoo>

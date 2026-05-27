@@ -14,7 +14,7 @@
     """,
     'author': "BROWSEINFO",
     'website': "https://www.browseinfo.com/demo-request?app=bi_total_quantity&version=17&edition=Community",
-    'depends': ['base','sale_management','purchase','account','stock'],
+    'depends': ['base','sale_management','purchase','account','stock','sale'],
     'data': [
         'views/sale_order_views.xml',
         'views/purchase_order_views.xml',
@@ -22,6 +22,8 @@
         'reports/report_deliveryslip.xml',
         'reports/report_purchaseorder.xml',
         'reports/report_saleorder.xml',
+        'reports/report_picking.xml',
+        'reports/report_invoice.xml',
     ],
     
     'installable': True,

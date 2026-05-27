@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_picking_inherit_totals" inherit_id="stock.report_picking">
+        
+        <!-- We target the main product table. 
+             In Odoo 17 stock.report_picking, the main table has class "table table-sm" 
+             and is conditional on move_line_ids. 
+             We insert our summary after this table. -->
+        <xpath expr="//table[@class='table table-sm'][1]" position="after">
+            
+            <!-- Only show totals if there are moves -->
+            <div t-if="o.move_ids_without_package" class="row justify-content-end mt-4">
+                <div class="col-auto">
+                    <table class="table table-sm table-borderless" style="width: auto; border-top: 1px solid black;">
+                        <tbody>
+                            <tr>
+                                <td><strong>Total Demand:</strong></td>
+                                <td class="text-end">
+                                    <span t-field="o.demand_quantity"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Total Done:</strong></td>
+                                <td class="text-end">
+                                    <span t-field="o.done_quantity"/>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </xpath>
+
+        <!-- Alternative Fallback: If the specific table xpath fails due to customizations, 
+             we can also try inserting before the note/footer area. 
+             Uncomment below if the above doesn't appear where you want it. -->
+        <!--
+        <xpath expr="//div[@class='oe_structure'][last()]" position="before">
+             ... same div code as above ...
+        </xpath>
+        -->
+
+    </template>
+</odoo>
